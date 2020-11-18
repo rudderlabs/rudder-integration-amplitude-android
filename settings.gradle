@@ -1,1 +1,1 @@
-include ':sample-kotlin', ':moengage'
+include ':sample-kotlin', ':amplitude'

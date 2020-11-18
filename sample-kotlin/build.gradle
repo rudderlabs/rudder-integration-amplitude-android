@@ -16,7 +16,7 @@ apply plugin: 'kotlin-android-extensions'
 android {
     compileSdkVersion 29
     defaultConfig {
-        applicationId "com.rudderstack.sample.moengage.android"
+        applicationId "com.rudderstack.sample.amplitude.android"
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 1
@@ -42,8 +42,8 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
 
-    implementation 'com.rudderstack.android.sdk:core:1.0.1'
-    implementation project(':moengage')
+    implementation 'com.rudderstack.android.sdk:core:1.+'
+    implementation project(':amplitude')
     implementation 'com.google.code.gson:gson:2.8.6'
 
     testImplementation 'junit:junit:4.12'

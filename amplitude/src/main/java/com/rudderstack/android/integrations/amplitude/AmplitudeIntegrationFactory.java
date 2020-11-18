@@ -1,4 +1,4 @@
-package com.rudderstack.android.integrations.moengage;
+package com.rudderstack.android.integrations.amplitude;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,7 +13,7 @@ import com.rudderstack.android.sdk.core.RudderMessage;
 import java.util.Locale;
 import java.util.Map;
 
-public class MoengageIntegrationFactory extends RudderIntegration<RudderClient> {
+public class AmplitudeIntegrationFactory extends RudderIntegration<RudderClient> {
 
     @Override
     public void reset() {
