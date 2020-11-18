@@ -43,7 +43,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
 
     implementation 'com.rudderstack.android.sdk:core:1.0.1'
-    implementation project(':moengage')
+    implementation project(':amplitude')
     implementation 'com.google.code.gson:gson:2.8.6'
 
     testImplementation 'junit:junit:4.12'
