@@ -11,8 +11,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        MainApplication.rudderClient.screen(localClassName)
-
+        /*MainApplication.rudderClient.screen(localClassName)
+        MainApplication.rudderClient.screen(
+            "MainActivity",
+            "HomeScreen",
+            RudderProperty().putValue("foo", "bar"),
+            null
+        )*/
         val property = RudderProperty()
         property.put("key_1", "val_1")
         property.put("key_2", "val_2")
@@ -23,15 +28,28 @@ class MainActivity : AppCompatActivity() {
         MainApplication.rudderClient.track("challenge: applied points", property)
         MainApplication.rudderClient.track("article: viewed")
         MainApplication.rudderClient.identify(
-            "test_user_id",
+            "4521",
             RudderTraits()
-                .putEmail("example@gmail.com")
-                .putFirstName("Foo")
-                .putLastName("Bar")
-                .putName("Ruchira"),
+                .putEmail("bobin@gmail.com")
+                .putFirstName("Dasari")
+                .putLastName("Bobby")
+                .putName("Dasari Bobby")
+                .put("friends",1)
+                .put("SO","Guntur")
+            ,
             null
         )
-        MainApplication.rudderClient.track("account: created")
-        MainApplication.rudderClient.track("account: authenticated")
+        /*MainApplication.rudderClient.group("new_group_id",
+            RudderTraits().putAge("24")
+                .putName("Test Group Name")
+                .putPhone("1234567891")
+                .put("company_id","RS")
+                .put("company_name","RudderStack")
+        )*/
+        //MainApplication.rudderClient.alias("test_new_id")
+        //MainApplication.rudderClient.track("account: created")
+        //MainApplication.rudderClient.track("account: authenticated")
+
+        //MainApplication.rudderClient.reset();
     }
 }

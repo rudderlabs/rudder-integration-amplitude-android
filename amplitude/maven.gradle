@@ -1,15 +1,15 @@
 ext {
     bintrayRepo = 'rudderstack'
-    bintrayName = 'moengage'
+    bintrayName = 'amplitude'
 
     publishedGroupId = 'com.rudderstack.android.integration'
     libraryName = 'RudderAndroidSdkCore'
-    artifact = 'moengage'
+    artifact = 'amplitude'
 
     libraryDescription = 'Android SDK for RudderStack. Steer your customer data'
 
     siteUrl = 'https://github.com/rudderlabs/rudder-sdk-android'
-    gitUrl = 'https://github.com/rudderlabs/rudder-integration-moengage-android.git'
+    gitUrl = 'https://github.com/rudderlabs/rudder-integration-amplitude-android.git'
 
     libraryVersion = '0.1.0-beta.1'
 
