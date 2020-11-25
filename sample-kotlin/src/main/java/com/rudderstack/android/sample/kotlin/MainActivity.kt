@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         val property = RudderProperty()
         property.put("key_1", "val_1")
         property.put("key_2", "val_2")
+        property.put("optOutOfSession",true)
         MainApplication.rudderClient.track("challenge: applied points", property)
 
         // payload for Ecommerce Track event

@@ -112,13 +112,11 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
                 groupValueTrait = (String) destinationConfig.get(GROUP_VALUE_TRAIT);
             }
             //batching settings
-            if(destinationConfig.containsKey(EVENT_UPLOAD_PERIOD_MILLIS))
-            {
-                eventUploadPeriodMillis =  ((Double)destinationConfig.get(EVENT_UPLOAD_PERIOD_MILLIS)).intValue();
+            if (destinationConfig.containsKey(EVENT_UPLOAD_PERIOD_MILLIS)) {
+                eventUploadPeriodMillis = ((Double) destinationConfig.get(EVENT_UPLOAD_PERIOD_MILLIS)).intValue();
             }
-            if(destinationConfig.containsKey(EVENT_UPLOAD_THRESHOLD))
-            {
-                eventUploadThreshold = ((Double)destinationConfig.get(EVENT_UPLOAD_THRESHOLD)).intValue();
+            if (destinationConfig.containsKey(EVENT_UPLOAD_THRESHOLD)) {
+                eventUploadThreshold = ((Double) destinationConfig.get(EVENT_UPLOAD_THRESHOLD)).intValue();
             }
             // screen settings
             if (destinationConfig.containsKey(TRACK_ALL_PAGES)) {
@@ -523,8 +521,13 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         if (eventProperties == null) {
             amplitude.logEvent(eventName);
         } else {
+            boolean optOutOfSession = false;
             JSONObject eventPropsObject = new JSONObject(eventProperties);
-            amplitude.logEvent(eventName, eventPropsObject);
+            if (eventProperties.containsKey("optOutOfSession")) {
+                System.out.println("Opt out of Session Property is Present");
+                optOutOfSession = (boolean) eventProperties.get("optOutOfSession");
+            }
+            amplitude.logEvent(eventName, eventPropsObject, null, optOutOfSession);
             if (eventProperties.containsKey("revenue") && !doNotTrackRevenue) {
                 trackRevenue(eventProperties, eventName);
             }
