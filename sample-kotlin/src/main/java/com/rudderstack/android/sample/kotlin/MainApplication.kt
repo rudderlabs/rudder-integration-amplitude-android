@@ -10,7 +10,7 @@ class MainApplication : Application() {
     companion object {
         private const val WRITE_KEY = "1kYLXnUWTL1Q7WiUYr7uqX2hDnO"
         private const val DATA_PLANE_URL = "https://38845a2d0e72.ngrok.io"
-        private const val CONTROL_PLANE_URL = "http://4b67436f8e44.ngrok.io"
+        private const val CONTROL_PLANE_URL = "https://fb1a9fcc88c0.ngrok.io"
         lateinit var rudderClient: RudderClient
     }
 

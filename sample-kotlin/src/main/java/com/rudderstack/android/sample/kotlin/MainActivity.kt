@@ -3,6 +3,7 @@ package com.rudderstack.android.sample.kotlin
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.rudderlabs.android.sample.kotlin.R
+import com.rudderstack.android.sdk.core.RudderOption
 import com.rudderstack.android.sdk.core.RudderProperty
 import com.rudderstack.android.sdk.core.RudderTraits
 import org.json.JSONArray
@@ -14,7 +15,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-       // Identify call
+        // Identify call
         MainApplication.rudderClient.identify(
             "user_id",
             RudderTraits()
@@ -30,6 +31,7 @@ class MainActivity : AppCompatActivity() {
             "", "", RudderProperty().putValue("foo", "bar"),
             null
         )
+
         // screen call with name and category
         MainApplication.rudderClient.screen(
             "MainActivity",
@@ -47,6 +49,7 @@ class MainActivity : AppCompatActivity() {
                 .put("company_id", "RS")
                 .put("company_name", "RudderStack")
         )
+
         // normal track call with no event properties
         MainApplication.rudderClient.track("account: created")
         MainApplication.rudderClient.track("account: authenticated")
@@ -90,6 +93,7 @@ class MainActivity : AppCompatActivity() {
         product2.put("image_url", "https://www.website.com/product/path.jpg")
         productsArray.put(product1)
         productsArray.put(product2)
+
 
         // Ecommerce Track Call
         MainApplication.rudderClient.track("Shopping Done", payload)

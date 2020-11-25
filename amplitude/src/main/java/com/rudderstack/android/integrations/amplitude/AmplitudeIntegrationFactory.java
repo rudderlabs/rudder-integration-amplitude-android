@@ -12,6 +12,7 @@ import com.amplitude.api.Revenue;
 import com.rudderstack.android.sdk.core.MessageType;
 import com.rudderstack.android.sdk.core.RudderClient;
 import com.rudderstack.android.sdk.core.RudderConfig;
+import com.rudderstack.android.sdk.core.RudderContext;
 import com.rudderstack.android.sdk.core.RudderIntegration;
 import com.rudderstack.android.sdk.core.RudderLogger;
 import com.rudderstack.android.sdk.core.RudderMessage;
@@ -51,6 +52,8 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
     private static final String API_KEY = "apiKey";
     private static final String GROUP_TYPE_TRAIT = "groupTypeTrait";
     private static final String GROUP_VALUE_TRAIT = "groupValueTrait";
+    private static final String EVENT_UPLOAD_PERIOD_MILLIS = "eventUploadPeriodMillis";
+    private static final String EVENT_UPLOAD_THRESHOLD = "eventUploadThreshold";
     private static final String VIEWED_EVENT_FORMAT = "Viewed %s Screen ";
     private static final String TRACK_ALL_PAGES = "trackAllPages";
     private static final String TRACK_NAMED_PAGES = "trackNamedPages";
@@ -62,14 +65,23 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
     private static final String TRAITS_KEY = "traits";
     private static final String TRACK_PRODUCTS_ONCE = "trackProductsOnce";
     private static final String TRACK_REVENUE_PER_PRODUCT = "trackRevenuePerProduct";
+    private static final String TRACK_SESSION_EVENTS = "trackSessionEvents";
+    private static final String ENABLE_LOCATION_LISTENING = "enableLocationListening";
+    private static final String USE_ADVERTISING_ID_FOR_DEVICE_ID = "useAdvertisingIdForDeviceId";
+
 
     String groupTypeTrait;
     String groupValueTrait;
+    int eventUploadPeriodMillis;
+    int eventUploadThreshold;
     boolean trackAllPages;
     boolean trackCategorizedPages;
     boolean trackNamedPages;
     boolean trackProductsOnce;
     boolean trackRevenuePerProduct;
+    boolean trackSessionEvents;
+    boolean enableLocationListening;
+    boolean useAdvertisingIdForDeviceId;
     Set<String> traitsToIncrement;
     Set<String> traitsToSetOnce;
     Set<String> traitsToAppend;
@@ -98,6 +110,15 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             }
             if (destinationConfig.containsKey(GROUP_VALUE_TRAIT)) {
                 groupValueTrait = (String) destinationConfig.get(GROUP_VALUE_TRAIT);
+            }
+            //batching settings
+            if(destinationConfig.containsKey(EVENT_UPLOAD_PERIOD_MILLIS))
+            {
+                eventUploadPeriodMillis =  ((Double)destinationConfig.get(EVENT_UPLOAD_PERIOD_MILLIS)).intValue();
+            }
+            if(destinationConfig.containsKey(EVENT_UPLOAD_THRESHOLD))
+            {
+                eventUploadThreshold = ((Double)destinationConfig.get(EVENT_UPLOAD_THRESHOLD)).intValue();
             }
             // screen settings
             if (destinationConfig.containsKey(TRACK_ALL_PAGES)) {
@@ -129,16 +150,41 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             if (destinationConfig.containsKey(TRAITS_TO_PREPEND)) {
                 traitsToPrepend = getStringSet(destinationConfig, TRAITS_TO_PREPEND);
             }
+            // other settings
+            if (destinationConfig.containsKey(TRACK_SESSION_EVENTS)) {
+                trackSessionEvents = (boolean) destinationConfig.get(TRACK_SESSION_EVENTS);
+            }
+            if (destinationConfig.containsKey(ENABLE_LOCATION_LISTENING)) {
+                enableLocationListening = (boolean) destinationConfig.get(ENABLE_LOCATION_LISTENING);
+            }
+            if (destinationConfig.containsKey(USE_ADVERTISING_ID_FOR_DEVICE_ID)) {
+                useAdvertisingIdForDeviceId = (boolean) destinationConfig.get(USE_ADVERTISING_ID_FOR_DEVICE_ID);
+            }
             // all good. initialize amplitude sdk
             amplitude = Amplitude.getInstance();
             amplitude.initialize(RudderClient.getApplication(), apiKey).setLogLevel(Log.VERBOSE);
+            // enabling Foreground Tracking
+            amplitude.enableForegroundTracking(RudderClient.getApplication());
+            // configuring Track Session Events
+            amplitude.trackSessionEvents(trackSessionEvents);
+            // Configuring Location Listening
+            if (!enableLocationListening) {
+                amplitude.disableLocationListening();
+            }
+            // Configuring usage of Advertising Id as Device Id
+            if (useAdvertisingIdForDeviceId) {
+                amplitude.useAdvertisingIdForDeviceId();
+            }
+            // configuring batching settings
+            amplitude.setEventUploadPeriodMillis(eventUploadPeriodMillis);
+            amplitude.setEventUploadThreshold(eventUploadThreshold);
             RudderLogger.logInfo("Configured Amplitude + Rudder integration and initialized Amplitude.");
         }
     }
 
     private void processRudderEvent(RudderMessage element) {
-        if (element.getType() != null) {
-            String type = element.getType();
+        String type = element.getType();
+        if (type != null) {
             switch (type) {
                 case MessageType.IDENTIFY:
                     String userId = element.getUserId();
@@ -146,7 +192,6 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
                         amplitude.setUserId(userId);
                     }
                     Map<String, Object> traits = element.getTraits();
-                    // need to implement traitsToAppend , traitsToPrepend
                     if (traits != null) {
                         if (!isNullOrEmpty(traitsToIncrement) || !isNullOrEmpty(traitsToSetOnce) || !isNullOrEmpty(traitsToAppend) || !isNullOrEmpty(traitsToPrepend)) {
                             handleTraits(traits);
@@ -449,7 +494,7 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
                 newProduct.put("productId", product.get("productId"));
             }
             if (!newProduct.has("productId")) {
-                if (newProduct.has("product_id")) {
+                if (product.has("product_id")) {
                     newProduct.put("productId", product.get("product_id"));
                 }
             }
@@ -498,6 +543,8 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         double price = 0;
         String productId = null;
         String revenueType = null;
+        String receipt = null;
+        String receiptSignature = null;
         if (eventProperties.containsKey("quantity")) {
             quantity = (int) eventProperties.get("quantity");
         }
@@ -515,19 +562,25 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         if (eventProperties.containsKey("productId")) {
             productId = (String) eventProperties.get("productId");
         }
-        if (productId == null) {
+        if (productId == null && eventProperties.containsKey("product_id")) {
             productId = String.valueOf(eventProperties.get("product_id"));
         }
         if (eventProperties.containsKey("revenueType")) {
             revenueType = (String) eventProperties.get("revenueType");
         }
-        if (revenueType == null) {
+        if (revenueType == null && eventProperties.containsKey("revenue_type")) {
             revenueType = (String) eventProperties.get("revenue_type");
         }
         if (revenueType == null) {
             revenueType = mapRevenueType.get(eventName.toLowerCase());
         }
 
+        if (eventProperties.containsKey("receipt")) {
+            receipt = (String) eventProperties.get("receipt");
+        }
+        if (eventProperties.containsKey("receiptSignature")) {
+            receiptSignature = (String) eventProperties.get("receiptSignature");
+        }
 
         if (revenue == 0 && price == 0) {
             RudderLogger.logDebug("revenue or price is not present.");
@@ -548,6 +601,9 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         }
         if (productId != null) {
             amplitudeRevenue.setProductId(productId);
+        }
+        if (receipt != null && receiptSignature != null) {
+            amplitudeRevenue.setReceipt(receipt, receiptSignature);
         }
         amplitude.logRevenueV2(amplitudeRevenue);
     }
