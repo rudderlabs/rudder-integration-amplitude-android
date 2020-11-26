@@ -523,8 +523,8 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         } else {
             boolean optOutOfSession = false;
             JSONObject eventPropsObject = new JSONObject(eventProperties);
+            // should move optOutOfSession to RudderOption in feature Instead of sending it in Event Properties
             if (eventProperties.containsKey("optOutOfSession")) {
-                System.out.println("Opt out of Session Property is Present");
                 optOutOfSession = (boolean) eventProperties.get("optOutOfSession");
             }
             amplitude.logEvent(eventName, eventPropsObject, null, optOutOfSession);
