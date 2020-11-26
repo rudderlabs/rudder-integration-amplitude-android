@@ -201,13 +201,18 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
                     break;
                 case MessageType.TRACK:
                     String eventName = element.getEventName();
+                    System.out.println("Event Name is : "+eventName);
+                    System.out.println("Track Revenue Per Product is : "+trackRevenuePerProduct);
+                    System.out.println("Track Products once is : "+trackProductsOnce);
                     if (eventName == null) {
                         return;
                     }
                     Map<String, Object> eventProperties = element.getProperties();
                     Object products = null;
                     if (eventProperties != null) {
+                        System.out.println("Event Properties is not Null");
                         if (eventProperties.containsKey("products")) {
+                            System.out.println("Event Properties containing Products");
                             products = eventProperties.get("products");
                         }
                     }
@@ -218,6 +223,7 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
                                 JSONArray productsArray = (JSONArray) products;
                                 for (int i = 0; i < productsArray.length(); i++) {
                                     JSONObject newProduct = getProductAttributes((JSONObject) productsArray.get(i));
+                                    System.out.println("New Product is : "+newProduct.toString());
                                     allProducts.put(newProduct);
                                 }
                                 eventProperties.put("products", allProducts);
@@ -552,7 +558,12 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             quantity = (int) eventProperties.get("quantity");
         }
         if (eventProperties.containsKey("revenue")) {
-            revenue = (double) eventProperties.get("revenue");
+            Object revenueObject = eventProperties.get("revenue");
+            if (revenueObject instanceof Integer) {
+                revenue = (double) ((Integer) revenueObject);
+            } else if (revenueObject instanceof Double) {
+                revenue = (double) revenueObject;
+            }
         }
         if (eventProperties.containsKey("price")) {
             Object priceObject = eventProperties.get("price");
