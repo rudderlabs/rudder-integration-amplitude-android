@@ -568,7 +568,7 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             }
         }
         if (eventProperties.containsKey("productId")) {
-            productId = (String) eventProperties.get("productId");
+            productId = String.valueOf(eventProperties.get("productId"));
         }
         if (productId == null && eventProperties.containsKey("product_id")) {
             productId = String.valueOf(eventProperties.get("product_id"));
