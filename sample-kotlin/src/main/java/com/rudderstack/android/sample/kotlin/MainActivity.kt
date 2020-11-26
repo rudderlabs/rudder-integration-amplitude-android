@@ -27,41 +27,41 @@ class MainActivity : AppCompatActivity() {
 
 
         // screen call without name and category
-       /* MainApplication.rudderClient.screen(
+        MainApplication.rudderClient.screen(
             "", "", RudderProperty().putValue("foo", "bar"),
             null
-        )*/
+        )
 
         // screen call with name and category
-        /*MainApplication.rudderClient.screen(
+        MainApplication.rudderClient.screen(
             "MainActivity",
             "HomeScreen",
             RudderProperty().putValue("foo", "bar"),
             null
-        )*/
+        )
 
         // group call with group traits
-        /*MainApplication.rudderClient.group(
+        MainApplication.rudderClient.group(
             "new_group_id",
             RudderTraits().putAge("24")
                 .putName("Test Group Name")
                 .putPhone("1234567891")
                 .put("company_id", "RS")
                 .put("company_name", "RudderStack")
-        )*/
+        )
 
         // normal track call with no event properties
-        //MainApplication.rudderClient.track("account: created")
-        //MainApplication.rudderClient.track("account: authenticated")
+        MainApplication.rudderClient.track("account: created")
+        MainApplication.rudderClient.track("account: authenticated")
 
         // track call with event properties
-        /*val property = RudderProperty()
+        val property = RudderProperty()
         property.put("key_1", "val_1")
         property.put("key_2", "val_2")
         property.put("optOutOfSession",true)
-        MainApplication.rudderClient.track("challenge: applied points", property)*/
+        MainApplication.rudderClient.track("challenge: applied points", property)
 
-        /*// payload for Ecommerce Track event
+        // payload for Ecommerce Track event
         val payload = RudderProperty()
         val productsArray = JSONArray()
         payload.put("order_id", 1234)
@@ -93,11 +93,11 @@ class MainActivity : AppCompatActivity() {
         product2.put("url", "https://www.website.com/product/path")
         product2.put("image_url", "https://www.website.com/product/path.jpg")
         productsArray.put(product1)
-        productsArray.put(product2)*/
+        productsArray.put(product2)
 
 
         // Ecommerce Track Call
-        //MainApplication.rudderClient.track("Shopping Done", payload)
+        MainApplication.rudderClient.track("Shopping Done", payload)
 
         val Pro1 = mutableMapOf("product_id" to 345, "sku" to "F-32", "name" to "UNO", "price" to 19, "quantity" to 2)
         val Pro2 = mutableMapOf("product_id" to 456, "sku" to "F-32", "name" to "UNO", "price" to 6, "quantity" to 5)

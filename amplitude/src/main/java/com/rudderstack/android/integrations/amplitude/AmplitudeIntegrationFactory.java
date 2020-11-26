@@ -21,6 +21,7 @@ import com.rudderstack.android.sdk.core.RudderProperty;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -201,45 +202,38 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
                     break;
                 case MessageType.TRACK:
                     String eventName = element.getEventName();
-                    System.out.println("Event Name is : "+eventName);
-                    System.out.println("Track Revenue Per Product is : "+trackRevenuePerProduct);
-                    System.out.println("Track Products once is : "+trackProductsOnce);
                     if (eventName == null) {
                         return;
                     }
                     Map<String, Object> eventProperties = element.getProperties();
-                    Object products = null;
+                    JSONArray products = null;
                     if (eventProperties != null) {
-                        System.out.println("Event Properties is not Null");
                         if (eventProperties.containsKey("products")) {
-                            System.out.println("Event Properties containing Products");
-                            products = eventProperties.get("products");
+                            products = getJSONArray(eventProperties.get("products"));
                         }
                     }
                     JSONArray allProducts = new JSONArray();
                     try {
                         if (trackProductsOnce) {
-                            if (products != null && (products instanceof JSONArray)) {
-                                JSONArray productsArray = (JSONArray) products;
-                                for (int i = 0; i < productsArray.length(); i++) {
-                                    JSONObject newProduct = getProductAttributes((JSONObject) productsArray.get(i));
-                                    System.out.println("New Product is : "+newProduct.toString());
+                            if (products != null) {
+                                for (int i = 0; i < products.length(); i++) {
+                                    JSONObject newProduct = getProductAttributes((JSONObject) products.get(i));
                                     allProducts.put(newProduct);
                                 }
                                 eventProperties.put("products", allProducts);
                                 logEventAndCorrespondingRevenue(eventProperties, eventName, trackRevenuePerProduct);
                                 if (trackRevenuePerProduct) {
-                                    trackingEventAndRevenuePerProduct(eventProperties, (JSONArray) products, false);
+                                    trackingEventAndRevenuePerProduct(eventProperties, products, false);
                                 }
                             } else {
                                 logEventAndCorrespondingRevenue(eventProperties, eventName, false);
                             }
                             return;
                         }
-                        if (products != null && (products instanceof JSONArray)) {
+                        if (products != null) {
                             eventProperties.remove("products");
                             logEventAndCorrespondingRevenue(eventProperties, eventName, trackRevenuePerProduct);
-                            trackingEventAndRevenuePerProduct(eventProperties, (JSONArray) products, true);
+                            trackingEventAndRevenuePerProduct(eventProperties, products, true);
                         } else {
                             logEventAndCorrespondingRevenue(eventProperties, eventName, false);
                         }
@@ -661,6 +655,17 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             e.printStackTrace();
         }
         return map;
+    }
+
+    public JSONArray getJSONArray(Object object) {
+        if (object instanceof JSONArray) {
+            return (JSONArray) object;
+        } else {
+            // if the object receieved was ArrayList
+            ArrayList arrayList = (ArrayList) object;
+            JSONArray jsonArray = new JSONArray(arrayList);
+            return jsonArray;
+        }
     }
 
 }
