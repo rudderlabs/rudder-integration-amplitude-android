@@ -99,30 +99,55 @@ class MainActivity : AppCompatActivity() {
         // Ecommerce Track Call
         MainApplication.rudderClient.track("Shopping Done", payload)
 
-        val Pro1 = mutableMapOf("product_id" to 345, "sku" to "F-32", "name" to "UNO", "price" to 19, "quantity" to 2)
-        val Pro2 = mutableMapOf("product_id" to 456, "sku" to "F-32", "name" to "UNO", "price" to 6, "quantity" to 5)
+        val Pro1 = mutableMapOf(
+            "product_id" to 345,
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 19,
+            "quantity" to 2
+        )
+        val Pro2 = mutableMapOf(
+            "product_id" to 456,
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 6,
+            "quantity" to 5
+        )
         val products = mutableListOf(Pro1, Pro2)
         MainApplication.rudderClient.track(
             "Item Purchased",
             RudderProperty()
                 .putValue("orderId", "101010")
-                .putValue("revenue",120)
+                .putValue("revenue", 120)
                 .putValue("products", products)
         )
         // Using Map as a Data type for Products
-        val Pro1 = mutableMapOf("productId" to "345", "sku" to "F-32", "name" to "UNO", "price" to 20.00, "quantity" to 2)
-        val Pro2 = mutableMapOf("productId" to "456", "sku" to "F-32", "name" to "UNO", "price" to 12.00, "quantity" to 5)
-        val products = mutableListOf(Pro1, Pro2)
+        val Prod1 = mutableMapOf(
+            "productId" to "345",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 20.00,
+            "quantity" to 2
+        )
+        val Prod2 = mutableMapOf(
+            "productId" to "456",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 12.00,
+            "quantity" to 5
+        )
+        val products2 = mutableListOf(Prod1, Prod2)
         MainApplication.rudderClient.track(
             "Order Completed",
             RudderProperty()
                 .putValue("orderId", "40404040")
-                .putValue("revenue",220.00)
+                .putValue("revenue", 220.00)
                 .putValue("products", products)
         )
 
+
         // reset call
-        MainApplication.rudderClient.reset();
+        MainApplication.rudderClient.reset();*/
 
     }
 }
