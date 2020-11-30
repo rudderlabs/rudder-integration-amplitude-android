@@ -3,7 +3,6 @@ package com.rudderstack.android.sample.kotlin
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.rudderlabs.android.sample.kotlin.R
-import com.rudderstack.android.sdk.core.RudderOption
 import com.rudderstack.android.sdk.core.RudderProperty
 import com.rudderstack.android.sdk.core.RudderTraits
 import org.json.JSONArray
@@ -147,7 +146,7 @@ class MainActivity : AppCompatActivity() {
 
 
         // reset call
-        MainApplication.rudderClient.reset();*/
+        MainApplication.rudderClient.reset();
 
     }
 }

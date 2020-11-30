@@ -20,6 +20,7 @@ import com.rudderstack.android.sdk.core.RudderMessage;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -325,7 +326,14 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         }
         if (eventProperties.containsKey("revenue")) {
             Object revenueObject = eventProperties.get("revenue");
-            if (revenueObject instanceof Integer) {
+            if (revenueObject instanceof String) {
+                try {
+                    Number number = NumberFormat.getInstance().parse((String) revenueObject);
+                    revenue = number.doubleValue();
+                } catch (Exception e) {
+                    RudderLogger.logDebug("String cannot be converted to Number");
+                }
+            } else if (revenueObject instanceof Integer) {
                 revenue = (double) ((Integer) revenueObject);
             } else if (revenueObject instanceof Double) {
                 revenue = (double) revenueObject;

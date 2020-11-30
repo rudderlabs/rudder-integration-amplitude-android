@@ -48,7 +48,7 @@ public class Utils {
         for (int i = 0; i < products.length(); i++) {
             EcommerceProduct ecommerceProduct = new Gson().fromJson(((JSONObject) products.get(i)).toString(), EcommerceProduct.class);
             String ecommerceProductString = new Gson().toJson(ecommerceProduct);
-            JSONObject newProduct = new Gson().fromJson(ecommerceProductString, JSONObject.class);
+            JSONObject newProduct = new JSONObject(ecommerceProductString);
             allProducts.put(newProduct);
         }
         return allProducts;

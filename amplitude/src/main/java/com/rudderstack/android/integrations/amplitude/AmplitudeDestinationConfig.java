@@ -12,7 +12,7 @@ public class AmplitudeDestinationConfig {
     boolean trackAllPages;
     boolean trackCategorizedPages;
     boolean trackNamedPages;
-    static boolean trackProductsOnce;
+    boolean trackProductsOnce;
     boolean trackRevenuePerProduct;
     boolean enableLocationListening;
     boolean useAdvertisingIdForDeviceId;

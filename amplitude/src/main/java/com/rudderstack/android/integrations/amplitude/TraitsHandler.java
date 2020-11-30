@@ -52,20 +52,20 @@ public class TraitsHandler {
         if (value instanceof Boolean) {
             identify.append(key, (Boolean) value);
         }
-        if (value instanceof long[]) {
-            identify.append(key, (long[]) value);
+        if (value instanceof Long[]) {
+            identify.append(key, ArrayUtils.toPrimitive((Long[]) value));
         }
-        if (value instanceof float[]) {
-            identify.append(key, (float[]) value);
+        if (value instanceof Float[]) {
+            identify.append(key, ArrayUtils.toPrimitive((Float[]) value));
         }
-        if (value instanceof double[]) {
-            identify.append(key, (double[]) value);
+        if (value instanceof Double[]) {
+            identify.append(key, ArrayUtils.toPrimitive((Double[]) value));
         }
         if (value instanceof String[]) {
             identify.append(key, (String[]) value);
         }
-        if (value instanceof boolean[]) {
-            identify.append(key, (boolean[]) value);
+        if (value instanceof Boolean[]) {
+            identify.append(key, ArrayUtils.toPrimitive((Boolean[]) value));
         }
         if (value instanceof JSONArray) {
             identify.append(key, (JSONArray) value);
@@ -97,20 +97,20 @@ public class TraitsHandler {
         if (value instanceof Boolean) {
             identify.prepend(key, (Boolean) value);
         }
-        if (value instanceof long[]) {
-            identify.prepend(key, (long[]) value);
+        if (value instanceof Long[]) {
+            identify.prepend(key, ArrayUtils.toPrimitive((Long[]) value));
         }
-        if (value instanceof float[]) {
-            identify.prepend(key, (float[]) value);
+        if (value instanceof Float[]) {
+            identify.prepend(key, ArrayUtils.toPrimitive((Float[]) value));
         }
-        if (value instanceof double[]) {
-            identify.prepend(key, (double[]) value);
+        if (value instanceof Double[]) {
+            identify.prepend(key, ArrayUtils.toPrimitive((Double[]) value));
         }
         if (value instanceof String[]) {
             identify.prepend(key, (String[]) value);
         }
-        if (value instanceof boolean[]) {
-            identify.prepend(key, (boolean[]) value);
+        if (value instanceof Boolean[]) {
+            identify.prepend(key, ArrayUtils.toPrimitive((Boolean[]) value));
         }
         if (value instanceof JSONArray) {
             identify.prepend(key, (JSONArray) value);
@@ -118,7 +118,6 @@ public class TraitsHandler {
         if (value instanceof JSONObject) {
             identify.prepend(key, (JSONObject) value);
         }
-
     }
 
     // amplitude does casting automatically for direct datatypes but not for arrays
@@ -135,8 +134,8 @@ public class TraitsHandler {
         if (value instanceof Double) {
             identify.setOnce(key, (Double) value);
         }
-        if (value instanceof int[]) {
-            identify.setOnce(key, (int[]) value);
+        if (value instanceof Integer[]) {
+            identify.setOnce(key, ArrayUtils.toPrimitive((Integer[]) value));
         }
         if (value instanceof String) {
             identify.setOnce(key, String.valueOf(value));
@@ -144,20 +143,20 @@ public class TraitsHandler {
         if (value instanceof Boolean) {
             identify.setOnce(key, (Boolean) value);
         }
-        if (value instanceof long[]) {
-            identify.setOnce(key, (long[]) value);
+        if (value instanceof Long[]) {
+            identify.setOnce(key, ArrayUtils.toPrimitive((Long[]) value));
         }
-        if (value instanceof float[]) {
-            identify.setOnce(key, (float[]) value);
+        if (value instanceof Float[]) {
+            identify.setOnce(key, ArrayUtils.toPrimitive((Float[]) value));
         }
-        if (value instanceof double[]) {
-            identify.setOnce(key, (double[]) value);
+        if (value instanceof Double[]) {
+            identify.setOnce(key, ArrayUtils.toPrimitive((Double[]) value));
         }
         if (value instanceof String[]) {
             identify.setOnce(key, (String[]) value);
         }
-        if (value instanceof boolean[]) {
-            identify.setOnce(key, (boolean[]) value);
+        if (value instanceof Boolean[]) {
+            identify.setOnce(key, ArrayUtils.toPrimitive((Boolean[]) value));
         }
         if (value instanceof JSONArray) {
             identify.setOnce(key, (JSONArray) value);
@@ -181,8 +180,8 @@ public class TraitsHandler {
         if (value instanceof Double) {
             identify.set(key, (Double) value);
         }
-        if (value instanceof int[]) {
-            identify.set(key, (int[]) value);
+        if (value instanceof Integer[]) {
+            identify.set(key, ArrayUtils.toPrimitive((Integer[]) value));
         }
         if (value instanceof String) {
             identify.set(key, String.valueOf(value));
@@ -190,20 +189,20 @@ public class TraitsHandler {
         if (value instanceof Boolean) {
             identify.set(key, (Boolean) value);
         }
-        if (value instanceof long[]) {
-            identify.set(key, (long[]) value);
+        if (value instanceof Long[]) {
+            identify.set(key, ArrayUtils.toPrimitive((Long[]) value));
         }
-        if (value instanceof float[]) {
-            identify.set(key, (float[]) value);
+        if (value instanceof Float[]) {
+            identify.set(key, ArrayUtils.toPrimitive((Float[]) value));
         }
-        if (value instanceof double[]) {
-            identify.set(key, (double[]) value);
+        if (value instanceof Double[]) {
+            identify.set(key, ArrayUtils.toPrimitive((Double[]) value));
         }
         if (value instanceof String[]) {
             identify.set(key, (String[]) value);
         }
-        if (value instanceof boolean[]) {
-            identify.set(key, (boolean[]) value);
+        if (value instanceof Boolean[]) {
+            identify.set(key, ArrayUtils.toPrimitive((Boolean[]) value));
         }
         if (value instanceof JSONArray) {
             identify.set(key, (JSONArray) value);
