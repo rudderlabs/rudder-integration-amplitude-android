@@ -44,7 +44,7 @@ val rudderClient = RudderClient.getInstance(
 
 ```
 
-## and if you would like to send Google Advertising Id of the device as device id to the Amplitude then add the below code in the AndroidManifest.xml of your app under <application> tag:
+and if you would like to send Google Advertising Id of the device as device id to the Amplitude then add the below code in the AndroidManifest.xml of your app under <application> tag:
 
 ```
 
