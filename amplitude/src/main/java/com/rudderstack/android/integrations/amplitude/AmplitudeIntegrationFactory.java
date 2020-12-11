@@ -135,12 +135,12 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
                         amplitude.setUserId(userId);
                     }
                     Map<String, Object> traits = element.getTraits();
+                    boolean optOutOfSession = false;
+                    if (traits.containsKey("optOutOfSession")) {
+                        optOutOfSession = (boolean) traits.get("optOutOfSession");
+                    }
                     if (traits != null) {
-                        if (!isNullOrEmpty(traitsToIncrement) || !isNullOrEmpty(traitsToSetOnce) || !isNullOrEmpty(traitsToAppend) || !isNullOrEmpty(traitsToPrepend)) {
-                            handleTraits(traits);
-                            return;
-                        }
-                        amplitude.setUserProperties(new JSONObject(traits));
+                        handleTraits(traits, optOutOfSession);
                     }
                     break;
                 case MessageType.TRACK:
@@ -261,7 +261,7 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         return amplitude;
     }
 
-    private void handleTraits(Map<String, Object> traits) {
+    private void handleTraits(Map<String, Object> traits, Boolean optOutOfSession) {
         Identify identify = new Identify();
 
         for (Map.Entry<String, Object> entry : traits.entrySet()) {
@@ -285,7 +285,7 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             }
             setTrait(key, value, identify);
         }
-        amplitude.identify(identify);
+        amplitude.identify(identify, optOutOfSession);
     }
 
 
@@ -402,7 +402,9 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             revenueType = (String) eventProperties.get("revenueType");
         }
         if (revenueType == null) {
-            revenueType = (String) eventProperties.get("revenue_type");
+            if (eventProperties.containsKey("revenue_type")) {
+                revenueType = (String) eventProperties.get("revenue_type");
+            }
         }
         try {
             for (int i = 0; i < allProducts.length(); i++) {

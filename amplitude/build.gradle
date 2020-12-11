@@ -44,8 +44,6 @@ dependencies {
     // Amplitude Android Sdk
     implementation 'com.amplitude:android-sdk:2.25.2'
     implementation 'com.squareup.okhttp3:okhttp:4.2.2'
-    // For using Google Advertising Id
-    implementation 'com.google.android.gms:play-services-ads:18.3.0'
     // GSON dependency
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'org.apache.commons:commons-lang3:3.5'
