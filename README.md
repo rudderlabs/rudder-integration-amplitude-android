@@ -25,9 +25,9 @@ implementation 'com.google.android.gms:play-services-ads:18.3.0'
 3. Add these lines to your ```app/build.gradle``` under ```compileOptions``` in the ```android``` tag
 ```
 compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
+  sourceCompatibility JavaVersion.VERSION_1_8
+  targetCompatibility JavaVersion.VERSION_1_8
+}
 ```
 
 ## Initialize ```RudderClient```
@@ -37,25 +37,19 @@ val rudderClient = RudderClient.getInstance(
     WRITE_KEY,
     RudderConfig.Builder()
         .withDataPlaneUrl(DATA_PLANE_URL)
-        .withControlPlaneUrl(CONTROL_PLANE_URL)
         .withFactory(AmplitudeIntegrationFactory.FACTORY)
         .build()
 )
-
 ```
-
-and if you would like to send Google Advertising Id of the device as device id to the Amplitude then add the below code in the AndroidManifest.xml of your app under <application> tag:
-
+and if you would like to send Google Advertising Id of the device as device id to the Amplitude then add the below code in the `AndroidManifest.xml` of your app under `<application>` tag:
 ```
-
 <meta-data
-            android:name="com.google.android.gms.ads.AD_MANAGER_APP"
-            android:value="true" />
-
+    android:name="com.google.android.gms.ads.AD_MANAGER_APP"
+    android:value="true" />
 ```
 
 ## Send Events
 Follow the steps from [Rudder Android SDK](https://github.com/rudderlabs/rudder-sdk-android)
 
 ## Contact Us
-If you come across any issues while configuring or using RudderStack, please feel free to [contact us](https://rudderstack.com/contact/) or start a conversation on our [Discord](https://discordapp.com/invite/xNEdEGw) channel. We will be happy to help you.
+If you come across any issues while configuring or using RudderStack, please feel free to [contact us](https://rudderstack.com/contact/) or start a conversation on our [Slack](https://resources.rudderstack.com/join-rudderstack-slack) channel. We will be happy to help you.
