@@ -8,38 +8,50 @@ Rudder is a platform for collecting, storing and routing customer event data to 
 
 Released under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-## Getting Started with Bugsnag Integration of Android SDK
-1. Add [Bugsnag](https://www.bugsnag.com) as a destination in the [Dashboard](https://app.rudderstack.com/) and define `apiKey`.
+## Getting Started with Amplitude Integration of Android SDK
+1. Add [Amplitude](https://amplitude.com) as a destination in the [Dashboard](https://app.rudderstack.com/) and define `apiKey` and all other applicable settings .
 
-2. Add these lines to your ```app/build.gradle```
+2. Add the dependency under ```dependencies```
 ```
-repositories {
-    maven { url "https://dl.bintray.com/rudderstack/rudderstack" }
-}
-```
-3. Add the dependency under ```dependencies```
-```
-// Rudder core sdk and bugsnag extension
-implementation 'com.rudderstack.android.sdk:core:1.0.1'
-implementation 'com.rudderstack.android.integration:bugsnag:0.1.0-beta.1'
-
-// bugsnag core sdk
-implementation 'com.bugsnag:bugsnag-android:4.22.3'
-
-// gson
+implementation 'com.rudderstack.android.sdk:core:1.+'
+implementation 'com.rudderstack.android.integration:amplitude:1.0.0'
 implementation 'com.google.code.gson:gson:2.8.6'
+
+// For using Google Advertising Id as device id
+implementation 'com.google.android.gms:play-services-ads:18.3.0'
+
+```
+
+3. Add these lines to your ```app/build.gradle``` under ```compileOptions``` in the ```android``` tag
+```
+compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 ```
 
 ## Initialize ```RudderClient```
 ```
-val rudderClient: RudderClient = RudderClient.getInstance(
+val rudderClient = RudderClient.getInstance(
     this,
-    <WRITE_KEY>,
+    WRITE_KEY,
     RudderConfig.Builder()
-        .withDataPlaneUrl(<DATA_PLANE_URL>)
-        .withFactory(BugSnagIntegrationFactory.FACTORY)
+        .withDataPlaneUrl(DATA_PLANE_URL)
+        .withControlPlaneUrl(CONTROL_PLANE_URL)
+        .withFactory(AmplitudeIntegrationFactory.FACTORY)
         .build()
 )
+
+```
+
+and if you would like to send Google Advertising Id of the device as device id to the Amplitude then add the below code in the AndroidManifest.xml of your app under <application> tag:
+
+```
+
+<meta-data
+            android:name="com.google.android.gms.ads.AD_MANAGER_APP"
+            android:value="true" />
+
 ```
 
 ## Send Events
