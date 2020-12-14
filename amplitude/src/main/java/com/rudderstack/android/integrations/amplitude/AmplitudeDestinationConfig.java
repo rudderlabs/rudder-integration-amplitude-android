@@ -1,12 +1,12 @@
 package com.rudderstack.android.integrations.amplitude;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class AmplitudeDestinationConfig {
     String apiKey;
-    String groupTypeTrait;
-    String groupValueTrait;
+//    String groupTypeTrait;
+//    String groupValueTrait;
     int eventUploadPeriodMillis;
     int eventUploadThreshold;
     boolean trackAllPages;
@@ -17,8 +17,8 @@ public class AmplitudeDestinationConfig {
     boolean enableLocationListening;
     boolean useAdvertisingIdForDeviceId;
     boolean trackSessionEvents;
-    ArrayList<Map<String,Object>> traitsToIncrement;
-    ArrayList<Map<String,Object>> traitsToSetOnce;
-    public ArrayList<Map<String,Object>> traitsToAppend;
-    ArrayList<Map<String,Object>> traitsToPrepend;
+    List<Map<String, Object>> traitsToIncrement;
+    List<Map<String, Object>> traitsToSetOnce;
+    List<Map<String, Object>> traitsToAppend;
+    List<Map<String, Object>> traitsToPrepend;
 }

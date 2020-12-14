@@ -7,9 +7,8 @@ import org.json.JSONObject;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-
-public class TraitsHandler {
-    public static void incrementTrait(String key, Object value, Identify identify) {
+class TraitsHandler {
+    static void incrementTrait(String key, Object value, Identify identify) {
         if (value instanceof Double) {
             identify.add(key, (Double) value);
         }
@@ -30,7 +29,7 @@ public class TraitsHandler {
         }
     }
 
-    public static void appendTrait(String key, Object value, Identify identify) {
+    static void appendTrait(String key, Object value, Identify identify) {
         if (value instanceof Integer) {
             identify.append(key, (Integer) value);
         }
@@ -43,14 +42,14 @@ public class TraitsHandler {
         if (value instanceof Double) {
             identify.append(key, (Double) value);
         }
-        if (value instanceof Integer[]) {
-            identify.append(key, ArrayUtils.toPrimitive((Integer[]) value));
-        }
         if (value instanceof String) {
             identify.append(key, String.valueOf(value));
         }
         if (value instanceof Boolean) {
             identify.append(key, (Boolean) value);
+        }
+        if (value instanceof Integer[]) {
+            identify.append(key, ArrayUtils.toPrimitive((Integer[]) value));
         }
         if (value instanceof Long[]) {
             identify.append(key, ArrayUtils.toPrimitive((Long[]) value));
@@ -75,7 +74,7 @@ public class TraitsHandler {
         }
     }
 
-    public static void prependTrait(String key, Object value, Identify identify) {
+    static void prependTrait(String key, Object value, Identify identify) {
         if (value instanceof Integer) {
             identify.prepend(key, (Integer) value);
         }
@@ -121,27 +120,27 @@ public class TraitsHandler {
     }
 
     // amplitude does casting automatically for direct datatypes but not for arrays
-    public static void setOnce(String key, Object value, Identify identify) {
+    static void setOnce(String key, Object value, Identify identify) {
         if (value instanceof Integer) {
-            identify.setOnce(key, (Integer) value);
+            identify.setOnce(key, value);
         }
         if (value instanceof Long) {
-            identify.setOnce(key, (Long) value);
+            identify.setOnce(key, value);
         }
         if (value instanceof Float) {
-            identify.setOnce(key, (Float) value);
+            identify.setOnce(key, value);
         }
         if (value instanceof Double) {
-            identify.setOnce(key, (Double) value);
-        }
-        if (value instanceof Integer[]) {
-            identify.setOnce(key, ArrayUtils.toPrimitive((Integer[]) value));
+            identify.setOnce(key, value);
         }
         if (value instanceof String) {
             identify.setOnce(key, String.valueOf(value));
         }
         if (value instanceof Boolean) {
-            identify.setOnce(key, (Boolean) value);
+            identify.setOnce(key, value);
+        }
+        if (value instanceof Integer[]) {
+            identify.setOnce(key, ArrayUtils.toPrimitive((Integer[]) value));
         }
         if (value instanceof Long[]) {
             identify.setOnce(key, ArrayUtils.toPrimitive((Long[]) value));
@@ -167,27 +166,27 @@ public class TraitsHandler {
     }
 
     // amplitude does casting automatically for datatypes but not for arrays
-    public static void setTrait(String key, Object value, Identify identify) {
+    static void setTrait(String key, Object value, Identify identify) {
         if (value instanceof Integer) {
-            identify.set(key, (Integer) value);
+            identify.set(key, value);
         }
         if (value instanceof Long) {
-            identify.set(key, (Long) value);
+            identify.set(key, value);
         }
         if (value instanceof Float) {
-            identify.set(key, (Float) value);
+            identify.set(key, value);
         }
         if (value instanceof Double) {
-            identify.set(key, (Double) value);
-        }
-        if (value instanceof Integer[]) {
-            identify.set(key, ArrayUtils.toPrimitive((Integer[]) value));
+            identify.set(key, value);
         }
         if (value instanceof String) {
             identify.set(key, String.valueOf(value));
         }
         if (value instanceof Boolean) {
-            identify.set(key, (Boolean) value);
+            identify.set(key, value);
+        }
+        if (value instanceof Integer[]) {
+            identify.set(key, ArrayUtils.toPrimitive((Integer[]) value));
         }
         if (value instanceof Long[]) {
             identify.set(key, ArrayUtils.toPrimitive((Long[]) value));
