@@ -7,6 +7,7 @@ import com.rudderstack.android.sdk.core.RudderProperty
 import com.rudderstack.android.sdk.core.RudderTraits
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -14,24 +15,178 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Identify call
-        MainApplication.rudderClient.identify(
-            "user_id",
-            RudderTraits()
-                .putFirstName("Shane")
-                .putLastName("Warne")
-                .putEmail("warne@shane.com"),
-            null
+        //TC:1. Track before identify
+        MainApplication.rudderClient.track("Shopping Done")
+
+
+        //TC: 2.
+        MainApplication.rudderClient.identify("User_111");
+
+
+        //TC:3. Identify with the previous user id and new user properties (Merging should properly done)
+
+        val traits = RudderTraits()
+        traits.putBirthday(Date())
+        traits.putEmail("abc@123.com")
+        traits.putFirstName("Manashi")
+        traits.putLastName("Mazumder")
+        traits.putGender("F")
+        traits.putPhone("5555555555")
+        MainApplication.rudderClient.identify("User_111", traits, null)
+
+
+        //TC:4. Track after identify
+
+        MainApplication.rudderClient.track(
+            "Shopping Done After Identify",
+            RudderProperty()
+                .putValue("details", "anything")
         )
 
 
-        // screen call without name and category
-        MainApplication.rudderClient.screen(
-            "", "", RudderProperty().putValue("foo", "bar"),
-            null
+        //TC:5. Sending revenue event with revenue, product id and without quantity (using their native SDK revenue is created)
+
+        val Pro1 = mutableMapOf(
+            "productId" to "345",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 20.00,
+            "quantity" to 2
+        )
+        val Pro2 = mutableMapOf(
+            "productId" to "456",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 12.00,
+            "quantity" to 5
+        )
+        val products = mutableListOf(Pro1, Pro2)
+        MainApplication.rudderClient.track(
+            "Order Completed",
+            RudderProperty()
+                .putValue("orderId", "101010")
+                .putValue("revenue", 220.00)
+                .putValue("products", products)
         )
 
-        // screen call with name and category
+
+        //TC: **6. Sending revenue event with revenue, quantity, product id, receipt, receipt signature to check the verified revenue
+
+        val Pro3 = mutableMapOf(
+            "productId" to "111",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 19,
+            "quantity" to 2
+        )
+        val Pro4 = mutableMapOf(
+            "productId" to "222",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 6,
+            "quantity" to 5
+        )
+        val products1 = mutableListOf(Pro3, Pro4)
+        MainApplication.rudderClient.track(
+            "Order Completed",
+            RudderProperty()
+                .putValue("orderId", "202020")
+                .putValue("revenue", 100)
+                .putValue("quantity", 2)
+                .putValue("products", products1)
+                .putValue("receipt", "reciept name")
+                .putValue("receiptSignature", "receipt Signature")
+        )
+
+
+        //TC: 7. Sending revenue event with revenue as String/Integer/Empty
+
+        val Pro5 = mutableMapOf(
+            "productId" to "111",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 19,
+            "quantity" to 2
+        )
+        val Pro6 = mutableMapOf(
+            "productId" to "222",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 6,
+            "quantity" to 5
+        )
+        val products2 = mutableListOf(Pro1, Pro2)
+        MainApplication.rudderClient.track(
+            "Order Completed",
+            RudderProperty()
+                .putValue("orderId", "303030")
+                .putValue("revenue", "30")
+                .putValue("products", products2)
+        )
+
+        // OR
+
+        MainApplication.rudderClient.track(
+            "Order Completed",
+            RudderProperty()
+                .putValue("orderId", "404040")
+                .putValue("products", products2)
+        )
+
+
+        //TC: 8. Sending revenue event with multiple products by enabling "Track revenue per product" ("revenue or price should be present in each product object")
+
+        val Pro7 = mutableMapOf(
+            "productId" to "111",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 19,
+            "quantity" to 2
+        )
+        val Pro8 = mutableMapOf(
+            "productId" to "222",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 6,
+            "quantity" to 5
+        )
+        val products3 = mutableListOf(Pro7, Pro8)
+        MainApplication.rudderClient.track(
+            "Order Completed",
+            RudderProperty()
+                .putValue("orderId", "404040")
+                .putValue("revenue", 34)
+                .putValue("products", products3)
+        )
+
+        //TC:9. Sending revenue event by enabling "Track product once"
+
+        val Pro9 = mutableMapOf(
+            "productId" to "111",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 19,
+            "quantity" to 2
+        )
+        val Pro10 = mutableMapOf(
+            "productId" to "222",
+            "sku" to "F-32",
+            "name" to "UNO",
+            "price" to 6,
+            "quantity" to 5
+        )
+        val products4 = mutableListOf(Pro1, Pro2)
+        MainApplication.rudderClient.track(
+            "Order Completed",
+            RudderProperty()
+                .putValue("orderId", "404040")
+                .putValue("revenue", 34)
+                .putValue("products", products4)
+        )
+
+
+        //TC: 10. Sending screen call with name, category by enabling only "Track name page" => ("viewed {name} screen")
+        //WITH CATEGORY
         MainApplication.rudderClient.screen(
             "MainActivity",
             "HomeScreen",
@@ -39,114 +194,186 @@ class MainActivity : AppCompatActivity() {
             null
         )
 
-        // group call with group traits
-        MainApplication.rudderClient.group(
-            "new_group_id",
-            RudderTraits().putAge("24")
-                .putName("Test Group Name")
-                .putPhone("1234567891")
-                .put("company_id", "RS")
-                .put("company_name", "RudderStack")
-        )
-
-        // normal track call with no event properties
-        MainApplication.rudderClient.track("account: created")
-        MainApplication.rudderClient.track("account: authenticated")
-
-        // track call with event properties
-        val property = RudderProperty()
-        property.put("key_1", "val_1")
-        property.put("key_2", "val_2")
-        property.put("optOutOfSession",true)
-        MainApplication.rudderClient.track("challenge: applied points", property)
-
-        // payload for Ecommerce Track event
-        val payload = RudderProperty()
-        val productsArray = JSONArray()
-        payload.put("order_id", 1234)
-        payload.put("affiliation", "Apple Store")
-        payload.put("value", 20)
-        payload.put("revenue", 15.00)
-        payload.put("shipping", 22)
-        payload.put("tax", 1)
-        payload.put("discount", 1.5)
-        payload.put("coupon", "ImagePro")
-        payload.put("currency", "USD")
-        payload.put("products", productsArray)
-        val product1 = JSONObject()
-        product1.put("product_id", 123)
-        product1.put("sku", "G-32")
-        product1.put("name", "Monopoly")
-        product1.put("price", 14)
-        product1.put("quantity", 1)
-        product1.put("category", "Games")
-        product1.put("url", "https://www.website.com/product/path")
-        product1.put("image_url", "https://www.website.com/product/path.jpg")
-        val product2 = JSONObject()
-        product2.put("product_id", 345)
-        product2.put("sku", "F-32")
-        product2.put("name", "UNO")
-        product2.put("price", 3.45)
-        product2.put("quantity", 2)
-        product2.put("category", "Games")
-        product2.put("url", "https://www.website.com/product/path")
-        product2.put("image_url", "https://www.website.com/product/path.jpg")
-        productsArray.put(product1)
-        productsArray.put(product2)
-
-
-        // Ecommerce Track Call
-        MainApplication.rudderClient.track("Shopping Done", payload)
-
-        val Pro1 = mutableMapOf(
-            "product_id" to 345,
-            "sku" to "F-32",
-            "name" to "UNO",
-            "price" to 19,
-            "quantity" to 2
-        )
-        val Pro2 = mutableMapOf(
-            "product_id" to 456,
-            "sku" to "F-32",
-            "name" to "UNO",
-            "price" to 6,
-            "quantity" to 5
-        )
-        val products = mutableListOf(Pro1, Pro2)
-        MainApplication.rudderClient.track(
-            "Item Purchased",
-            RudderProperty()
-                .putValue("orderId", "101010")
-                .putValue("revenue", 120)
-                .putValue("products", products)
-        )
-        // Using Map as a Data type for Products
-        val Prod1 = mutableMapOf(
-            "productId" to "345",
-            "sku" to "F-32",
-            "name" to "UNO",
-            "price" to 20.00,
-            "quantity" to 2
-        )
-        val Prod2 = mutableMapOf(
-            "productId" to "456",
-            "sku" to "F-32",
-            "name" to "UNO",
-            "price" to 12.00,
-            "quantity" to 5
-        )
-        val products2 = mutableListOf(Prod1, Prod2)
-        MainApplication.rudderClient.track(
-            "Order Completed",
-            RudderProperty()
-                .putValue("orderId", "40404040")
-                .putValue("revenue", 220.00)
-                .putValue("products", products)
+        //WITHOUT CATEGORY
+        MainApplication.rudderClient.screen(
+            "Manashi-screen",
+            RudderProperty().putValue("details", "settings checking"),
+            null
         )
 
 
-        // reset call
+        //TC: 11. Sending screen call with name, category by enabling only "Track category page" => ("viewed {category} screen")
+
+        MainApplication.rudderClient.screen(
+            "2ndname",
+            "2ndcategory",
+            RudderProperty().putValue("foo", "bar"),
+            null
+        )
+
+
+        //TC: 12. Sending screen call with name by enabling "Track all pages" => ("viewed {name} screen")
+
+        MainApplication.rudderClient.screen(
+            "3rdname",
+            "3rdcategory",
+            RudderProperty().putValue("details", "settings checking"),
+            null
+        )
+
+
+        //TC:13. Sending screen call without name by enabling "Track all pages" => ("Loaded a screen")
+        //WITH CATEGORY
+        MainApplication.rudderClient.screen(
+            "",
+            "3rdcategory",
+            RudderProperty().putValue("details", "settings checking"),
+            null
+        )
+
+        //WITHOUT CATEGORY
+        MainApplication.rudderClient.screen(
+            "",
+            RudderProperty().putValue("details", "settings checking"),
+            null
+        )
+
+
+        MainApplication.rudderClient.screen(
+            "Manashi-screen",
+            RudderProperty().putValue("details", "settings checking"),
+            null
+        )
+
+
+//TC: 14. Sending screen call without name by enabling "Track name pages" => (events should not go)
+
+        MainApplication.rudderClient.screen(
+            "",
+            "4thcategory",
+            RudderProperty().putValue("details", "settings checking"),
+            null
+        );
+
+
+        //TC:15. Sending screen call with name, category by enabling "Track name page" and "Track category page"
+
+        MainApplication.rudderClient.screen(
+            "5thname",
+            "5thcategory",
+            RudderProperty().putValue("details", "settings checking"),
+            null
+        );
+
+        //TC: 16. Sending track event by enabling “Prefer advertisingId for device id” settings on dashboard
+
+        MainApplication.rudderClient.identify(
+            "User_888",
+            RudderTraits()
+                .putFirstName("rina")
+                .putLastName("Warne")
+                .putEmail("rina@shane.com"),
+            null
+        );
+
+
+        //TC: 17. Sending group call with group properties by giving the trait value to "Amplitude Group Type Trait" and "Amplitude Group Value Trait" (For example, if you specified group_type as the “Amplitude Group Type Trait”, and name as the “Amplitude Group Value Trait” Would associate the current user with the group with type "Organisation" and value "ExampleCorp, LLC") = PENDING
+        //TC: 18. Legacy group call behaviour check by not giving any trait value to "Amplitude Group Type Trait" and "Amplitude Group Value Trait"  ([Rudder] Group: groupId) = PENDING
+
+        //TC: 19. Sending reset call
+
+        MainApplication.rudderClient.track("before reset track 1")
+        MainApplication.rudderClient.track("before reset track 2")
+
         MainApplication.rudderClient.reset();
+
+        MainApplication.rudderClient.track("after reset track 3")
+        MainApplication.rudderClient.track("after reset track 4")
+
+
+        //TC:20. Extra settings check:
+
+        //a. Enable Location Listening = PASS
+        //b. Sending custom language and country properties (analytics.track('Video Played', {language: 'Japanese'});) = We do not support as off now
+
+        //c. Traits to increment
+
+        MainApplication.rudderClient.identify(
+            "User_888",
+            RudderTraits()
+                .put("Karma", 1)
+                .put("friends", "Amp")
+                .put("firstname", 2),
+            null
+        );
+        MainApplication.rudderClient.identify(
+            "User_888",
+            RudderTraits()
+                .put("Karma", 1)
+                .put("friends", "123"),
+            null
+        );
+
+
+        //d. Traits to append
+
+        val num = arrayOf(10, 20)
+        MainApplication.rudderClient.identify(
+            "User_888",
+            RudderTraits()
+                .put("somelist", num)
+                .put("firstname", "SRI"),
+            null
+        );
+
+
+        //e. Traits to prepend
+
+        val num1 = arrayOf(100, 200)
+        MainApplication.rudderClient.identify(
+            "User_888",
+            RudderTraits()
+                .put("some another list", num1)
+                .put("lastname", "234"),
+            null
+        );
+
+
+        //f. Traits to set once
+
+        //Set (trait = sign_up_date):
+
+        MainApplication.rudderClient.identify(
+            "User_888",
+            RudderTraits()
+                .put("sign_up_date", "2016-04-01"),
+            null
+        );
+
+        //Set (trait = sign_up_date):
+
+        MainApplication.rudderClient.identify(
+            "User_888",
+            RudderTraits()
+                .put("sign_up_date", "2018-04-01"),
+            null
+        );
+
+        //Set (trait = nothing):
+
+        MainApplication.rudderClient.identify(
+            "User_888",
+            RudderTraits()
+                .put("sign_up_date", "2018-04-01"),
+            null
+        );
+
+        //g. Track session events
+
+        MainApplication.rudderClient.track("sample track")
+
+        //h. optOutSession = PASS for identify and track call
+
 
     }
 }
