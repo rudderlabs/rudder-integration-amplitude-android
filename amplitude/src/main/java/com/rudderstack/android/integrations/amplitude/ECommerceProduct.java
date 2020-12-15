@@ -12,8 +12,8 @@ public class ECommerceProduct {
     @SerializedName("name")
     String name;
     @SerializedName("price")
-    float price;
+    double price;
     @SerializedName("quantity")
-    float quantity;
+    double quantity;
 }
 

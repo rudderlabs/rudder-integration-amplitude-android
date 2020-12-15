@@ -45,12 +45,12 @@ class Utils {
 
     @NonNull
     static JSONArray simplifyProducts(@Nullable JSONArray products) throws Exception {
-        JSONArray allProducts = new JSONArray();
         Gson gson = new Gson();
+        JSONArray allProducts = new JSONArray();
         if (products != null) {
             for (int i = 0; i < products.length(); i++) {
                 ECommerceProduct eCommerceProduct = gson.fromJson(
-                        gson.toJson(products.get(i)),
+                        products.getJSONObject(i).toString(),
                         ECommerceProduct.class
                 );
                 allProducts.put(new JSONObject(gson.toJson(eCommerceProduct)));

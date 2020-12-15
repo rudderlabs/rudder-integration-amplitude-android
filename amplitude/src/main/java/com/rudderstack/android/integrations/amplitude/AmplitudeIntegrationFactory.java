@@ -336,7 +336,7 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             Map<String, Object> eventProperties,
             String eventName,
             boolean doNotTrackRevenue
-    ) throws ParseException {
+    ) {
         if (eventProperties == null) {
             this.amplitude.logEvent(eventName);
             return;
@@ -362,13 +362,13 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
     private void trackRevenue(
             @Nullable Map<String, Object> eventProperties,
             @NonNull String eventName
-    ) throws ParseException {
+    ) {
         HashSet<String> revenueEventTypeSet = new HashSet<>();
         revenueEventTypeSet.add("order completed");
         revenueEventTypeSet.add("completed order");
         revenueEventTypeSet.add("product purchased");
 
-        int quantity = 0;
+        double quantity = 0;
         double revenue = 0;
         double price = 0;
 
@@ -381,31 +381,16 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         amplitudeRevenue.setEventProperties(new JSONObject(eventProperties));
 
         if (eventProperties.containsKey("quantity")) {
-            Number number = NumberFormat.getInstance().parse(
-                    (String) eventProperties.get("quantity")
-            );
-            quantity = number == null ? 0 : number.intValue();
+            quantity = new NumberObject(eventProperties.get("quantity"))
+                    .getNumber();
         }
 
         if (eventProperties.containsKey("revenue")) {
-            Object revenueObject = eventProperties.get("revenue");
-            if (revenueObject instanceof String) {
-                Number number = NumberFormat.getInstance().parse((String) revenueObject);
-                revenue = number == null ? 0 : number.doubleValue();
-            } else if (revenueObject instanceof Integer) {
-                revenue = (double) ((Integer) revenueObject);
-            } else if (revenueObject instanceof Double) {
-                revenue = (double) revenueObject;
-            }
+            revenue = new NumberObject(eventProperties.get("revenue")).getNumber();
         }
 
         if (eventProperties.containsKey("price")) {
-            Object priceObject = eventProperties.get("price");
-            if (priceObject instanceof Integer) {
-                price = (double) ((Integer) priceObject);
-            } else if (priceObject instanceof Double) {
-                price = (double) priceObject;
-            }
+            price = new NumberObject(eventProperties.get("price")).getNumber();
         }
 
         if (revenue == 0 && price == 0) {
@@ -422,7 +407,7 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             quantity = 1;
         }
         amplitudeRevenue.setPrice(price);
-        amplitudeRevenue.setQuantity(quantity);
+        amplitudeRevenue.setQuantity((int) quantity);
 
         if (eventProperties.containsKey("productId")) {
             amplitudeRevenue.setProductId(String.valueOf(eventProperties.get("productId")));
@@ -454,7 +439,7 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             Map<String, Object> eventProperties,
             JSONArray allProducts,
             boolean shouldTrackEventPerProduct
-    ) throws JSONException, ParseException {
+    ) throws JSONException {
         String revenueType = null;
         if (eventProperties.containsKey("revenueType")) {
             revenueType = (String) eventProperties.get("revenueType");
