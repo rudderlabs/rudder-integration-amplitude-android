@@ -17,6 +17,10 @@ implementation 'com.rudderstack.android.sdk:core:1.+'
 implementation 'com.rudderstack.android.integration:amplitude:1.0.1'
 implementation 'com.google.code.gson:gson:2.8.6'
 
+// Amplitude
+implementation 'com.amplitude:android-sdk:2.25.2'
+implementation 'com.squareup.okhttp3:okhttp:4.2.2'
+
 // For using Google Advertising Id as device id
 implementation 'com.google.android.gms:play-services-ads:18.3.0'
 
