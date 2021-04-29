@@ -14,7 +14,7 @@ signing {
     sign configurations.archives
 }
 
-group = 'com.rudderstack.android.integration.amplitude'
+group = 'com.rudderstack.android.integration'
 archivesBaseName = 'amplitude'
 version = '1.0.1'
 
