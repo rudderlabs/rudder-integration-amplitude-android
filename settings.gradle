@@ -1,1 +1,19 @@
 include ':sample-kotlin', ':amplitude'
+include ':android'
+project(":android").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/android")
+include ':core'
+project(":core").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/core")
+include ':web'
+project(":web").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/web")
+include ':models'
+project(":models").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/models")
+include ':rudderjsonadapter'
+project(":rudderjsonadapter").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/rudderjsonadapter")
+include ':jacksonrudderadapter'
+project(":jacksonrudderadapter").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/jacksonrudderadapter")
+include ':gsonrudderadapter'
+project(":gsonrudderadapter").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/gsonrudderadapter")
+include ':moshirudderadapter'
+project(":moshirudderadapter").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/moshirudderadapter")
+include ':repository'
+project(":repository").projectDir=new File(rootDir, "../../rudder-labs/RudderAndroidLibs/repository")

@@ -3,13 +3,14 @@ package com.rudderstack.android.sample.kotlin
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.rudderlabs.android.sample.kotlin.R
-import com.rudderstack.android.sdk.core.RudderProperty
-import com.rudderstack.android.sdk.core.RudderTraits
-import org.json.JSONArray
-import org.json.JSONObject
+import com.rudderstack.models.TrackProperties
+import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
+    companion object{
+        private var trackCounter = 0
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -210,16 +211,20 @@ class MainActivity : AppCompatActivity() {
             "price" to 6,
             "quantity" to 5
         );
+
+
         val products1 = mutableListOf(Pro3, Pro4)
-        MainApplication.rudderClient.track(
-            "Item Purchased",
-            RudderProperty()
-                .putValue("orderId", "202020")
-                .putValue("revenue", 100)
-                .putValue("quantity", 2)
-                .putValue("products", products1)
-                .putValue("receipt", "reciept name")
-                .putValue("receiptSignature", "receipt Signature")
-        );
+        btn.setOnClickListener {
+            MainApplication.rudderClient.track(
+                "Item Purchased - ${++trackCounter}",
+                TrackProperties(Pair("orderId", "202020"),
+                    Pair("revenue", 100),
+                    Pair("quantity", 2),
+                    Pair("products", products1),
+                    Pair("receipt", "reciept name"),
+                    Pair("receiptSignature", "receipt Signature"))
+            );
+        }
+
     }
 }

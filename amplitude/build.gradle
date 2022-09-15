@@ -1,6 +1,5 @@
 
 apply plugin: 'com.android.library'
-
 android {
     compileSdkVersion 30
 
@@ -23,15 +22,26 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.annotation:annotation:1.4.0'
     // rudder core sdk
-    compileOnly 'com.rudderstack.android.sdk:core:1.+'
+//    compileOnly 'com.rudderstack.android.sdk:core:1.+'
     // Amplitude Android Sdk
     implementation 'com.amplitude:android-sdk:2.25.2'
-    implementation 'com.squareup.okhttp3:okhttp:4.2.2'
+//    implementation 'com.squareup.okhttp3:okhttp:4.2.2'
     // GSON dependency
-    implementation 'com.google.code.gson:gson:2.8.6'
+    compileOnly 'com.google.code.gson:gson:2.8.9'
+    compileOnly "com.fasterxml.jackson.core:jackson-databind:2.12.4"
+    compileOnly "com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3"
+    compileOnly "com.squareup.moshi:moshi-kotlin:1.13.0"
+    compileOnly "com.squareup.moshi:moshi:1.13.0"
+    compileOnly "com.squareup.moshi:moshi-adapters:1.13.0"
     implementation 'org.apache.commons:commons-lang3:3.5'
+    implementation project (path: ':android')
+
+    compileOnly(project(path: ':moshirudderadapter'))
+    compileOnly(project(path: ':gsonrudderadapter'))
+    compileOnly(project(path: ':jacksonrudderadapter'))
+    compileOnly(project(path: ':rudderjsonadapter'))
 }
 
-apply from: './maven.gradle'
+//apply from: './maven.gradle'

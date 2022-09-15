@@ -1,5 +1,6 @@
-package com.rudderstack.android.integrations.amplitude;
 
+package com.rudderstack.android.integrations.amplitude;
+/*
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -467,4 +468,4 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
             }
         }
     }
-}
+}*/
