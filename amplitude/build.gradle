@@ -1,4 +1,4 @@
-
+apply plugin: 'kotlin-android'
 apply plugin: 'com.android.library'
 android {
     compileSdkVersion 30
@@ -27,7 +27,7 @@ dependencies {
 //    compileOnly 'com.rudderstack.android.sdk:core:1.+'
     // Amplitude Android Sdk
     implementation 'com.amplitude:android-sdk:2.25.2'
-//    implementation 'com.squareup.okhttp3:okhttp:4.2.2'
+    api 'com.squareup.okhttp3:okhttp:4.9.2'
     // GSON dependency
     compileOnly 'com.google.code.gson:gson:2.8.9'
     compileOnly "com.fasterxml.jackson.core:jackson-databind:2.12.4"

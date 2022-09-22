@@ -39,7 +39,8 @@ class AmplitudeDestinationPlugin(
     private var traitsToPrepend: Set<String>? = null
 
     override fun intercept(chain: Plugin.Chain): Message {
-//        if(config == null)
+        if(destinationConfig != null)
+            processRudderEvent(chain.message())
         return chain.proceed(chain.originalMessage)
     }
 
@@ -55,6 +56,10 @@ class AmplitudeDestinationPlugin(
                 it,
                 AmplitudeDestinationConfig::class.java
             )
+        }?.also {
+            analytics?.apply {
+                initializeAmplitude(this, it)
+            }
         }
 
         traitsToIncrement = destinationConfig?.traitsToIncrement?.let { Utils.getStringSet(it) }
@@ -72,10 +77,20 @@ class AmplitudeDestinationPlugin(
         this.analytics = analytics
 
         // all good. initialize amplitude sdk
+        destinationConfig?.apply {
+            initializeAmplitude(analytics, this)
+        }
 
+    }
+
+    private fun initializeAmplitude(
+        analytics: Analytics,
+        destinationConfig: AmplitudeDestinationConfig
+    ) {
         // all good. initialize amplitude sdk
+        if (amplitude != null) return
         this.amplitude = Amplitude.getInstance()
-        this.amplitude?.initialize(application, destinationConfig!!.apiKey)
+        this.amplitude?.initialize(application, destinationConfig.apiKey)
             ?.setLogLevel(
                 when (analytics.logger.level) {
                     Logger.LogLevel.Info -> Log.INFO
@@ -84,6 +99,7 @@ class AmplitudeDestinationPlugin(
                     Logger.LogLevel.None, Logger.LogLevel.Error -> Log.ERROR
                 }
             )
+        setReady(true, this.amplitude)
     }
 
     private fun configureAmplitude(destinationConfig: AmplitudeDestinationConfig) {
@@ -147,7 +163,8 @@ class AmplitudeDestinationPlugin(
                             // if track products once is enabled and  we are having products array
                             if (products != null && eventProperties != null) {
                                 val simplifiedProducts = Utils.simplifyProducts(products)
-                                val newEventProperties = eventProperties optAdd mapOf("products" to simplifiedProducts)
+                                val newEventProperties =
+                                    eventProperties optAdd mapOf("products" to simplifiedProducts)
                                 logEventAndCorrespondingRevenue(
                                     newEventProperties,
                                     eventName,
@@ -179,7 +196,7 @@ class AmplitudeDestinationPlugin(
                             // each product separately as trackProductsOnce is disabled
                             val newEventProperties = eventProperties - "products"
                             logEventAndCorrespondingRevenue(
-                               newEventProperties ,
+                                newEventProperties,
                                 eventName,
                                 destinationConfig.trackRevenuePerProduct
                             )
@@ -243,7 +260,8 @@ class AmplitudeDestinationPlugin(
                     }
                     if (destinationConfig.trackNamedPages && propertiesJSON != null &&
                         propertiesJSON.has("name") &&
-                        !TextUtils.isEmpty(propertiesJSON["name"] as String)) {
+                        !TextUtils.isEmpty(propertiesJSON["name"] as String)
+                    ) {
                         amplitude?.logEvent(
                             String.format(
                                 VIEWED_EVENT_FORMAT,
@@ -256,11 +274,11 @@ class AmplitudeDestinationPlugin(
                     }
                 }
 
-            /*RudderLogger.logWarn("AmplitudeIntegrationFactory: MessageType is not specified")*/
+                /*RudderLogger.logWarn("AmplitudeIntegrationFactory: MessageType is not specified")*/
 //                is AliasMessage -> TODO()
 //                is GroupMessage -> TODO()
 //                is PageMessage -> analytics?.logger?.warn( log = "AmplitudeIntegrationFactory: Page type unsupported for mobile")
-                else -> analytics?.logger?.warn( log = "AmplitudeIntegrationFactory: Type unsupported for mobile")
+                else -> analytics?.logger?.warn(log = "AmplitudeIntegrationFactory: Type unsupported for mobile")
 
             }
         }
@@ -304,7 +322,7 @@ class AmplitudeDestinationPlugin(
         if (eventProperties.containsKey("optOutOfSession")) {
             optOutOfSession = eventProperties["optOutOfSession"] as Boolean
         }
-        amplitude!!.logEvent(
+        amplitude?.logEvent(
             eventName,
             eventPropsObject,
             null,
@@ -375,7 +393,7 @@ class AmplitudeDestinationPlugin(
                 eventProperties["receiptSignature"] as String?
             )
         }
-        amplitude!!.logRevenueV2(amplitudeRevenue)
+        amplitude?.logRevenueV2(amplitudeRevenue)
     }
 
     @Throws(JSONException::class)
@@ -409,5 +427,18 @@ class AmplitudeDestinationPlugin(
                 )
             }
         }
+    }
+
+    override fun flush() {
+        super.flush();
+        this.amplitude?.uploadEvents();
+        analytics?.logger?.debug(log = "Amplitude uploadEvents().");
+    }
+
+    override fun reset() {
+        this.amplitude?.userId = null;
+        this.amplitude?.regenerateDeviceId();
+        analytics?.logger?.debug(log = "Amplitude setUserId(null).");
+        analytics?.logger?.debug(log = "Amplitude regenerateDeviceId().");
     }
 }
