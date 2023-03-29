@@ -2,11 +2,11 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 33
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 30
+        minSdkVersion 19
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0.1"
     }
@@ -25,13 +25,13 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.annotation:annotation:1.1.0'
     // rudder core sdk
-    compileOnly 'com.rudderstack.android.sdk:core:1.+'
+    compileOnly 'com.rudderstack.android.sdk:core:1.12.0'
     // Amplitude Android Sdk
-    implementation 'com.amplitude:android-sdk:2.25.2'
-    implementation 'com.squareup.okhttp3:okhttp:4.2.2'
+    implementation 'com.amplitude:analytics-android:1.+'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.2'
     // GSON dependency
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'org.apache.commons:commons-lang3:3.5'
 }
 
-apply from: './maven.gradle'
+//apply from: './maven.gradle'

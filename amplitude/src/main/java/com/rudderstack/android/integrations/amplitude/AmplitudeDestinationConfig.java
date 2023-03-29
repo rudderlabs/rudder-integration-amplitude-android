@@ -17,6 +17,8 @@ public class AmplitudeDestinationConfig {
     boolean enableLocationListening;
     boolean useAdvertisingIdForDeviceId;
     boolean trackSessionEvents;
+    String residencyServer;
+    String serverUrl;
     List<Map<String, Object>> traitsToIncrement;
     List<Map<String, Object>> traitsToSetOnce;
     List<Map<String, Object>> traitsToAppend;
