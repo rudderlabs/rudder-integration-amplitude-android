@@ -7,16 +7,20 @@ import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.amplitude.android.Amplitude;
 import com.amplitude.android.Configuration;
 import com.amplitude.android.TrackingOptions;
-import com.amplitude.android.events.BaseEvent;
 import com.amplitude.android.events.Identify;
 import com.amplitude.android.events.Revenue;
 import com.amplitude.android.utilities.AndroidLoggerProvider;
 import com.amplitude.android.utilities.AndroidStorageProvider;
+import com.amplitude.core.LoggerProvider;
 import com.amplitude.core.ServerZone;
+import com.amplitude.core.StorageProvider;
+import com.amplitude.core.events.IngestionMetadata;
+import com.amplitude.core.events.Plan;
 import com.google.gson.Gson;
 import com.rudderstack.android.sdk.core.MessageType;
 import com.rudderstack.android.sdk.core.RudderClient;
@@ -43,6 +47,10 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
             HashSet<>(Arrays.asList("order completed",
             "completed order",
             "product purchased")));
+    private static final boolean DEFAULT_OPT_OUT = false;
+    private static final String PARTNER_ID = "Rudderstack";
+    private static final String REVENUE_TYPE_LABEL = "revenueType";
+    private static final String REVENUE_LABEL = "revenue";
 //    private static final int MA
 
     private Amplitude amplitude;
@@ -56,7 +64,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     public static final Factory FACTORY = new Factory() {
         @Override
         public RudderIntegration<?> create(Object settings, RudderClient client, RudderConfig rudderConfig) {
-            return new AmplitudeIntegrationFactory(settings, rudderConfig);
+            return new AmplitudeIntegrationFactory(settings);
         }
 
         @Override
@@ -65,37 +73,133 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         }
     };
 
-    private AmplitudeIntegrationFactory(Object config, RudderConfig rudderConfig) {
+    @VisibleForTesting
+    AmplitudeIntegrationFactory(){}
+    private AmplitudeIntegrationFactory(Object config) {
+        super();
         if (!assertValidConfigs(config))
             return;
-        this.destinationConfig = parseDestinationConfig(config);
-        if (!assertValidDestinationConfig(this.destinationConfig))
+        AmplitudeDestinationConfig parsedDestinationConfig = parseDestinationConfig(config);
+        if (!assertValidDestinationConfig(parsedDestinationConfig))
             return;
+        setup(parsedDestinationConfig,
+                createAmplitudeInstance(requireNonNull(RudderClient.getApplication()),
+                        parsedDestinationConfig, new AndroidStorageProvider(),
+                new AndroidLoggerProvider()));
+    }
+    @VisibleForTesting
+    void setup(@NonNull AmplitudeDestinationConfig config,@NonNull Amplitude amplitude){
+        this.destinationConfig = config;
         configureTraitsSettings();
-        initializeAmplitude(requireNonNull(RudderClient.getApplication()));
+        this.amplitude = amplitude;
     }
 
-    private void initializeAmplitude(
-            @NonNull Application application) {
+    @VisibleForTesting Amplitude createAmplitudeInstance(
+            @NonNull Application application, AmplitudeDestinationConfig destinationConfig,
+            @NonNull StorageProvider storageProvider, @NonNull LoggerProvider loggerProvider) {
+        Configuration configuration = new Configuration(
+                destinationConfig.apiKey, application,
+                getFlushQueueSizeFromConfig(destinationConfig), getFlushIntervalFromConfig(destinationConfig),
+                DEFAULT_INSTANCE_NAME, getOptOutFromConfig(destinationConfig),
+                storageProvider, loggerProvider, null, PARTNER_ID,
+                null, getMaxRetriesFromConfig(destinationConfig),
+                getUseBatchFromConfig(destinationConfig),
+                getServerZone(destinationConfig), destinationConfig.serverUrl,
+                getPlanFromConfig(destinationConfig),
+                getIngestionMetaDataFromConfig(destinationConfig),
+                destinationConfig.useAdvertisingIdForDeviceId,
+                getUseAppSetIdForDeviceId(destinationConfig),
+                getNewDeviceIdPerInstall(destinationConfig), new TrackingOptions(),
+                getEnableCoppaControlFroConfig(destinationConfig), destinationConfig.enableLocationListening,
+                getFlushEventsOnCloseFromConfig(destinationConfig), getMinTimeBetweenSessionMillisFromConfig(destinationConfig),
+                destinationConfig.trackSessionEvents,
+                getIdentifyBatchIntervalMillisFromConfig(destinationConfig),
+                storageProvider
 
-        amplitude = new Amplitude(
-                new Configuration(
-                        destinationConfig.apiKey, application,
-                        destinationConfig.eventUploadThreshold, destinationConfig.eventUploadPeriodMillis,
-                        DEFAULT_INSTANCE_NAME, false, new AndroidStorageProvider(),
-                        new AndroidLoggerProvider(), null, null, null,
-                        com.amplitude.core.Configuration.FLUSH_MAX_RETRIES, true,
-                        getServerZone(destinationConfig), destinationConfig.serverUrl, null,
-                        null, destinationConfig.useAdvertisingIdForDeviceId,
-                        false, false, new TrackingOptions(),
-                        false, destinationConfig.enableLocationListening,
-                        true, Configuration.MIN_TIME_BETWEEN_SESSIONS_MILLIS,
-                        destinationConfig.trackSessionEvents,
-                        com.amplitude.core.Configuration.IDENTIFY_BATCH_INVERVAL_MILLIS,
-                        new AndroidStorageProvider()
-
-                )
         );
+        return new Amplitude(configuration);
+    }
+
+    private int getFlushIntervalFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if(destinationConfig.eventUploadPeriodMillis > 0)
+            return destinationConfig.eventUploadPeriodMillis;
+        return com.amplitude.core.Configuration.FLUSH_INTERVAL_MILLIS;
+    }
+
+    private int getFlushQueueSizeFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if(destinationConfig.eventUploadThreshold > 0)
+            return destinationConfig.eventUploadThreshold;
+        return com.amplitude.core.Configuration.FLUSH_QUEUE_SIZE;
+    }
+
+    private boolean getEnableCoppaControlFroConfig(AmplitudeDestinationConfig destinationConfig) {
+        if(destinationConfig.enableCoppaControl == null)
+            return false;
+        return destinationConfig.enableCoppaControl;
+    }
+    private boolean getFlushEventsOnCloseFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if(destinationConfig.flushEventsOnClose == null)
+            return true;
+        return destinationConfig.flushEventsOnClose;
+    }
+
+    private long getMinTimeBetweenSessionMillisFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if(destinationConfig.minTimeBetweenSessionMillis == null ||
+                destinationConfig.minTimeBetweenSessionMillis == 0)
+            return Configuration.MIN_TIME_BETWEEN_SESSIONS_MILLIS;
+        return destinationConfig.minTimeBetweenSessionMillis;
+    }
+    private long getIdentifyBatchIntervalMillisFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if(destinationConfig.identifyBatchIntervalMillis == null ||
+                destinationConfig.identifyBatchIntervalMillis == 0)
+            return com.amplitude.core.Configuration.IDENTIFY_BATCH_INVERVAL_MILLIS;
+        return destinationConfig.identifyBatchIntervalMillis;
+    }
+
+
+    private IngestionMetadata getIngestionMetaDataFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        AmplitudeIngestionMetadata amplitudeIngestionMetadata = destinationConfig.ingestionMetadata;
+        if(amplitudeIngestionMetadata == null)
+            return null;
+        return new com.amplitude.android.events.IngestionMetadata(amplitudeIngestionMetadata.sourceName,
+                amplitudeIngestionMetadata.sourceVersion);
+    }
+
+    private boolean getUseAppSetIdForDeviceId(AmplitudeDestinationConfig destinationConfig) {
+        if (destinationConfig.useAppSetIdForDeviceId == null)
+            return false;
+        return destinationConfig.useAppSetIdForDeviceId;
+    }
+    private boolean getNewDeviceIdPerInstall(AmplitudeDestinationConfig destinationConfig) {
+        if (destinationConfig.newDeviceIdPerInstall == null)
+            return false;
+        return destinationConfig.newDeviceIdPerInstall;
+    }
+
+    private @Nullable Plan getPlanFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        AmplitudePlan amplitudePlan = destinationConfig.plan;
+        if(amplitudePlan == null)
+            return null;
+        return new Plan(amplitudePlan.branch, amplitudePlan.source, amplitudePlan.version,
+                amplitudePlan.versionId);
+    }
+
+    private boolean getUseBatchFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if (destinationConfig.useBatch == null)
+            return true;
+        return destinationConfig.useBatch;
+    }
+
+    private int getMaxRetriesFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if(destinationConfig.flushMaxRetries == null || destinationConfig.flushMaxRetries == 0)
+            return com.amplitude.core.Configuration.FLUSH_MAX_RETRIES;
+        return destinationConfig.flushMaxRetries;
+    }
+
+    private boolean getOptOutFromConfig(AmplitudeDestinationConfig destinationConfig){
+        if( destinationConfig.optOut == null)
+            return DEFAULT_OPT_OUT;
+        return destinationConfig.optOut;
     }
 
 
@@ -122,7 +226,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     }
 
     private boolean assertValidDestinationConfig(AmplitudeDestinationConfig destinationConfig) {
-        if (TextUtils.isEmpty(this.destinationConfig.apiKey)) {
+        if (TextUtils.isEmpty(destinationConfig.apiKey)) {
             RudderLogger.logError("Invalid api key. Aborting Amplitude initialization.");
             return false;
         }
@@ -242,7 +346,8 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         }
     }
 
-    private void track(RudderMessage message) throws Exception {
+    @VisibleForTesting
+    void track(RudderMessage message) throws Exception {
         String eventName = message.getEventName();
         if (eventName == null) {
             return;
@@ -334,7 +439,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     private void trackProductRevenue(String revenueType, JSONObject product) throws JSONException {
         if (this.destinationConfig.trackRevenuePerProduct) {
             if (revenueType != null) {
-                product.put("revenueType", revenueType);
+                product.put(REVENUE_TYPE_LABEL, revenueType);
             }
             trackRevenue(
                     Utils.jsonToMap(product),
@@ -346,10 +451,8 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
 
     private @Nullable
     String getRevenueTypeFromProperties(Map<String, Object> eventProperties) {
-        if (eventProperties.containsKey("revenueType")) {
-            return  (String) eventProperties.get("revenueType");
-        } else if (eventProperties.containsKey("revenue_type")) {
-            return  (String) eventProperties.get("revenue_type");
+        if (eventProperties.containsKey(REVENUE_TYPE_LABEL)) {
+            return  (String) eventProperties.get(REVENUE_TYPE_LABEL);
         }
         return null;
     }
@@ -361,7 +464,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
             return;
         }
         amplitude.track(eventName, eventProperties);
-        if (eventProperties.containsKey("revenue") && !doNotTrackRevenue) {
+        if (eventProperties.containsKey(REVENUE_LABEL) && !doNotTrackRevenue) {
             trackRevenue(eventProperties, eventName);
         }
     }
@@ -400,10 +503,8 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
 
     private void updateRevenueWithRevenueDetails(Revenue revenue, String eventName,
                                                  Map<String, Object> eventProperties) {
-        if (eventProperties.containsKey("revenueType")) {
-            revenue.setRevenueType((String) eventProperties.get("revenueType"));
-        } else if (eventProperties.containsKey("revenue_type")) {
-            revenue.setRevenueType((String) eventProperties.get("revenue_type"));
+        if (eventProperties.containsKey(REVENUE_TYPE_LABEL)) {
+            revenue.setRevenueType((String) eventProperties.get(REVENUE_TYPE_LABEL));
         } else if (REVENUE_TYPE_SET.contains(eventName.toLowerCase())) {
             revenue.setRevenueType("Purchase");
         }
@@ -428,8 +529,8 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
                     .getNumber();
         }
 
-        if (eventProperties.containsKey("revenue")) {
-            revenueValue = new NumberObject(eventProperties.get("revenue")).getNumber();
+        if (eventProperties.containsKey(REVENUE_LABEL)) {
+            revenueValue = new NumberObject(eventProperties.get(REVENUE_LABEL)).getNumber();
         }
 
         if (eventProperties.containsKey("price")) {
