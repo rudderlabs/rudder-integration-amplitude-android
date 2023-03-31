@@ -561,7 +561,8 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
             this.amplitude.setUserId(userId);
         }
         Map<String, Object> traits = message.getTraits();
-        amplitude.identify(configureTraits(traits));
+        com.amplitude.core.events.Identify identify = configureTraits(traits);
+        amplitude.identify(identify);
     }
 
     private Identify configureTraits(Map<String, Object> traits) {
@@ -575,19 +576,19 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     }
 
     private void addTraitToIdentify(Identify identify, String key, Object property) {
-        if (this.traitsToIncrement.contains(key)) {
+        if (traitsToIncrement != null && this.traitsToIncrement.contains(key)) {
             TraitsHandler.incrementTrait(identify, key, property);
             return;
         }
-        if (this.traitsToSetOnce.contains(key)) {
+        if (traitsToSetOnce != null && this.traitsToSetOnce.contains(key)) {
             TraitsHandler.setOnce(identify, key, property);
             return;
         }
-        if (this.traitsToAppend.contains(key)) {
+        if (traitsToAppend != null && this.traitsToAppend.contains(key)) {
             TraitsHandler.appendTrait(identify, key, property);
             return;
         }
-        if (this.traitsToPrepend.contains(key)) {
+        if (traitsToPrepend != null && this.traitsToPrepend.contains(key)) {
             TraitsHandler.prependTrait(identify, key, property);
             return;
         }
