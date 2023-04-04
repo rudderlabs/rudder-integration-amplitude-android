@@ -74,7 +74,9 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     };
 
     @VisibleForTesting
-    AmplitudeIntegrationFactory(){}
+    AmplitudeIntegrationFactory() {
+    }
+
     private AmplitudeIntegrationFactory(Object config) {
         super();
         if (!assertValidConfigs(config))
@@ -85,16 +87,18 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         setup(parsedDestinationConfig,
                 createAmplitudeInstance(requireNonNull(RudderClient.getApplication()),
                         parsedDestinationConfig, new AndroidStorageProvider(),
-                new AndroidLoggerProvider()));
+                        new AndroidLoggerProvider()));
     }
+
     @VisibleForTesting
-    void setup(@NonNull AmplitudeDestinationConfig config,@NonNull Amplitude amplitude){
+    void setup(@NonNull AmplitudeDestinationConfig config, @NonNull Amplitude amplitude) {
         this.destinationConfig = config;
         configureTraitsSettings();
         this.amplitude = amplitude;
     }
 
-    @VisibleForTesting Amplitude createAmplitudeInstance(
+    @VisibleForTesting
+    Amplitude createAmplitudeInstance(
             @NonNull Application application, AmplitudeDestinationConfig destinationConfig,
             @NonNull StorageProvider storageProvider, @NonNull LoggerProvider loggerProvider) {
         Configuration configuration = new Configuration(
@@ -109,7 +113,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
                 getIngestionMetaDataFromConfig(destinationConfig),
                 destinationConfig.useAdvertisingIdForDeviceId,
                 getUseAppSetIdForDeviceId(destinationConfig),
-                getNewDeviceIdPerInstall(destinationConfig), new TrackingOptions(),
+                getNewDeviceIdPerInstall(destinationConfig), getTrackingOptions(destinationConfig.trackingOptions),
                 getEnableCoppaControlFroConfig(destinationConfig), destinationConfig.enableLocationListening,
                 getFlushEventsOnCloseFromConfig(destinationConfig), getMinTimeBetweenSessionMillisFromConfig(destinationConfig),
                 destinationConfig.trackSessionEvents,
@@ -120,37 +124,100 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         return new Amplitude(configuration);
     }
 
+    private TrackingOptions getTrackingOptions(@Nullable AmplitudeTrackingOptions amplitudeTrackingOptions) {
+        TrackingOptions trackingOptions = new TrackingOptions();
+        if (amplitudeTrackingOptions == null)
+            return trackingOptions;
+        if (amplitudeTrackingOptions.adId != null && !amplitudeTrackingOptions.adId) {
+            trackingOptions.disableAdid();
+        }
+        if (amplitudeTrackingOptions.appSetId != null && !amplitudeTrackingOptions.appSetId) {
+            trackingOptions.disableAppSetId();
+        }
+        if (amplitudeTrackingOptions.carrier != null && !amplitudeTrackingOptions.carrier) {
+            trackingOptions.disableCarrier();
+        }
+        if (amplitudeTrackingOptions.city != null && !amplitudeTrackingOptions.city) {
+            trackingOptions.disableCity();
+        }
+        if (amplitudeTrackingOptions.country != null && !amplitudeTrackingOptions.country) {
+            trackingOptions.disableCountry();
+        }
+        if (amplitudeTrackingOptions.deviceBrand != null && !amplitudeTrackingOptions.deviceBrand) {
+            trackingOptions.disableDeviceBrand();
+        }
+        if (amplitudeTrackingOptions.deviceManufacturer != null && !amplitudeTrackingOptions.deviceManufacturer) {
+            trackingOptions.disableDeviceManufacturer();
+        }
+        if (amplitudeTrackingOptions.deviceModel != null && !amplitudeTrackingOptions.deviceModel) {
+            trackingOptions.disableDeviceModel();
+        }
+        if (amplitudeTrackingOptions.dma != null && !amplitudeTrackingOptions.dma){
+            trackingOptions.disableDma();
+        }
+        if (amplitudeTrackingOptions.ipAddress != null && !amplitudeTrackingOptions.ipAddress) {
+            trackingOptions.disableIpAddress();
+        }
+        if (amplitudeTrackingOptions.language != null && !amplitudeTrackingOptions.language) {
+            trackingOptions.disableLanguage();
+        }
+        if (amplitudeTrackingOptions.latlng != null && !amplitudeTrackingOptions.latlng) {
+            trackingOptions.disableLatLng();
+        }
+        if (amplitudeTrackingOptions.apiLevel != null && !amplitudeTrackingOptions.apiLevel) {
+            trackingOptions.disableApiLevel();
+        }
+        if (amplitudeTrackingOptions.platform != null && !amplitudeTrackingOptions.platform) {
+            trackingOptions.disablePlatform();
+        }
+        if (amplitudeTrackingOptions.region != null && !amplitudeTrackingOptions.region) {
+            trackingOptions.disableRegion();
+        }
+        if (amplitudeTrackingOptions.versionName != null && !amplitudeTrackingOptions.versionName) {
+            trackingOptions.disableVersionName();
+        }
+        if (amplitudeTrackingOptions.osName != null && !amplitudeTrackingOptions.osName) {
+            trackingOptions.disableOsName();
+        }
+        if (amplitudeTrackingOptions.osVersion != null && !amplitudeTrackingOptions.osVersion) {
+            trackingOptions.disableOsVersion();
+        }
+        return trackingOptions;
+    }
+
     private int getFlushIntervalFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if(destinationConfig.eventUploadPeriodMillis > 0)
+        if (destinationConfig.eventUploadPeriodMillis > 0)
             return destinationConfig.eventUploadPeriodMillis;
         return com.amplitude.core.Configuration.FLUSH_INTERVAL_MILLIS;
     }
 
     private int getFlushQueueSizeFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if(destinationConfig.eventUploadThreshold > 0)
+        if (destinationConfig.eventUploadThreshold > 0)
             return destinationConfig.eventUploadThreshold;
         return com.amplitude.core.Configuration.FLUSH_QUEUE_SIZE;
     }
 
     private boolean getEnableCoppaControlFroConfig(AmplitudeDestinationConfig destinationConfig) {
-        if(destinationConfig.enableCoppaControl == null)
+        if (destinationConfig.enableCoppaControl == null)
             return false;
         return destinationConfig.enableCoppaControl;
     }
+
     private boolean getFlushEventsOnCloseFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if(destinationConfig.flushEventsOnClose == null)
+        if (destinationConfig.flushEventsOnClose == null)
             return true;
         return destinationConfig.flushEventsOnClose;
     }
 
     private long getMinTimeBetweenSessionMillisFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if(destinationConfig.minTimeBetweenSessionMillis == null ||
+        if (destinationConfig.minTimeBetweenSessionMillis == null ||
                 destinationConfig.minTimeBetweenSessionMillis == 0)
             return Configuration.MIN_TIME_BETWEEN_SESSIONS_MILLIS;
         return destinationConfig.minTimeBetweenSessionMillis;
     }
+
     private long getIdentifyBatchIntervalMillisFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if(destinationConfig.identifyBatchIntervalMillis == null ||
+        if (destinationConfig.identifyBatchIntervalMillis == null ||
                 destinationConfig.identifyBatchIntervalMillis == 0)
             return com.amplitude.core.Configuration.IDENTIFY_BATCH_INVERVAL_MILLIS;
         return destinationConfig.identifyBatchIntervalMillis;
@@ -159,7 +226,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
 
     private IngestionMetadata getIngestionMetaDataFromConfig(AmplitudeDestinationConfig destinationConfig) {
         AmplitudeIngestionMetadata amplitudeIngestionMetadata = destinationConfig.ingestionMetadata;
-        if(amplitudeIngestionMetadata == null)
+        if (amplitudeIngestionMetadata == null)
             return null;
         return new com.amplitude.android.events.IngestionMetadata(amplitudeIngestionMetadata.sourceName,
                 amplitudeIngestionMetadata.sourceVersion);
@@ -170,15 +237,17 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
             return false;
         return destinationConfig.useAppSetIdForDeviceId;
     }
+
     private boolean getNewDeviceIdPerInstall(AmplitudeDestinationConfig destinationConfig) {
         if (destinationConfig.newDeviceIdPerInstall == null)
             return false;
         return destinationConfig.newDeviceIdPerInstall;
     }
 
-    private @Nullable Plan getPlanFromConfig(AmplitudeDestinationConfig destinationConfig) {
+    private @Nullable
+    Plan getPlanFromConfig(AmplitudeDestinationConfig destinationConfig) {
         AmplitudePlan amplitudePlan = destinationConfig.plan;
-        if(amplitudePlan == null)
+        if (amplitudePlan == null)
             return null;
         return new Plan(amplitudePlan.branch, amplitudePlan.source, amplitudePlan.version,
                 amplitudePlan.versionId);
@@ -191,13 +260,13 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     }
 
     private int getMaxRetriesFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if(destinationConfig.flushMaxRetries == null || destinationConfig.flushMaxRetries == 0)
+        if (destinationConfig.flushMaxRetries == null || destinationConfig.flushMaxRetries == 0)
             return com.amplitude.core.Configuration.FLUSH_MAX_RETRIES;
         return destinationConfig.flushMaxRetries;
     }
 
-    private boolean getOptOutFromConfig(AmplitudeDestinationConfig destinationConfig){
-        if( destinationConfig.optOut == null)
+    private boolean getOptOutFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if (destinationConfig.optOut == null)
             return DEFAULT_OPT_OUT;
         return destinationConfig.optOut;
     }
@@ -276,10 +345,12 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
             RudderLogger.logError(e);
         }
     }
+
     @Override
     public Amplitude getUnderlyingInstance() {
         return this.amplitude;
     }
+
     private void processRudderEvent(RudderMessage message) throws Exception {
         String type = message.getType();
         if (type == null)
@@ -304,43 +375,43 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         if (this.destinationConfig.trackAllPages) {
             trackAllPages(properties);
         }
-        if (this.destinationConfig.trackCategorizedPages){
+        if (this.destinationConfig.trackCategorizedPages) {
             trackCategorizedPages(properties);
         }
-        if (this.destinationConfig.trackNamedPages){
+        if (this.destinationConfig.trackNamedPages) {
             trackNamedPages(properties);
         }
     }
 
     private void trackNamedPages(Map<String, Object> properties) {
-        if(properties == null)
+        if (properties == null)
             return;
         Object categoryObject = properties.get("name");
-        if(categoryObject instanceof String && !TextUtils.isEmpty((String) categoryObject)){
+        if (categoryObject instanceof String && !TextUtils.isEmpty((String) categoryObject)) {
             amplitude.track(String.format(VIEWED_EVENT_FORMAT, categoryObject),
                     properties);
         }
     }
 
     private void trackCategorizedPages(Map<String, Object> properties) {
-        if(properties == null)
+        if (properties == null)
             return;
         Object categoryObject = properties.get("category");
-        if(categoryObject instanceof String && !TextUtils.isEmpty((String) categoryObject)){
+        if (categoryObject instanceof String && !TextUtils.isEmpty((String) categoryObject)) {
             amplitude.track(String.format(VIEWED_EVENT_FORMAT, categoryObject),
                     properties);
         }
     }
 
-    private void trackAllPages(Map<String, Object> properties){
-        if(properties == null)
+    private void trackAllPages(Map<String, Object> properties) {
+        if (properties == null)
             return;
         Object nameObject = properties.get("name");
 
-        if (nameObject instanceof String && !TextUtils.isEmpty((String)nameObject)) {
+        if (nameObject instanceof String && !TextUtils.isEmpty((String) nameObject)) {
             this.amplitude.track(String.format(VIEWED_EVENT_FORMAT, nameObject),
                     properties);
-        }else {
+        } else {
             this.amplitude.track("Loaded a Screen",
                     properties);
         }
@@ -355,7 +426,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         Map<String, Object> eventProperties = message.getProperties();
         JSONArray products = Utils.getProducts(eventProperties);
         if (this.destinationConfig.trackProductsOnce) {
-            trackProductOnce(products,eventName, eventProperties);
+            trackProductOnce(products, eventName, eventProperties);
             return;
         }
         // if track products once is disabled and we are having a products array
@@ -452,7 +523,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     private @Nullable
     String getRevenueTypeFromProperties(Map<String, Object> eventProperties) {
         if (eventProperties.containsKey(REVENUE_TYPE_LABEL)) {
-            return  (String) eventProperties.get(REVENUE_TYPE_LABEL);
+            return (String) eventProperties.get(REVENUE_TYPE_LABEL);
         }
         return null;
     }

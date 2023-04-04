@@ -2,7 +2,6 @@ package com.rudderstack.android.integrations.amplitude;
 
 import androidx.annotation.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +30,7 @@ public class AmplitudeDestinationConfig {
     Integer flushMaxRetries;
     Boolean optOut;
     Boolean useBatch;
+    @Nullable AmplitudeTrackingOptions trackingOptions;
     List<Map<String, Object>> traitsToIncrement;
     List<Map<String, Object>> traitsToSetOnce;
     List<Map<String, Object>> traitsToAppend;
