@@ -8,8 +8,8 @@ import com.rudderstack.android.sdk.core.RudderLogger
 
 class MainApplication : MultiDexApplication() {
     companion object {
-        private const val WRITE_KEY = "1ilklNZfoUokpPmTCQBY0i6abUE"
-        private const val DATA_PLANE_URL = "https://38845a2d0e72.ngrok.io"
+        private const val WRITE_KEY = "2BqDIDKDAnwqv18h0yZwG8GifNh"
+        private const val DATA_PLANE_URL = "https://rudderstacyta.dataplane.dev.rudderlabs.com"
         private const val CONTROL_PLANE_URL = "https://api.dev.rudderlabs.com"
         lateinit var rudderClient: RudderClient
     }

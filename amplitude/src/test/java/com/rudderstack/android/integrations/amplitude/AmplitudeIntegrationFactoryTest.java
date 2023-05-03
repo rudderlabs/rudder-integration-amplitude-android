@@ -12,6 +12,7 @@ import com.amplitude.core.StorageProvider;
 import com.amplitude.core.events.Identify;
 import com.amplitude.core.utilities.ConsoleLoggerProvider;
 import com.amplitude.core.utilities.InMemoryStorage;
+import com.rudderstack.android.sdk.core.RudderConfig;
 import com.rudderstack.android.sdk.core.RudderMessage;
 
 import org.junit.After;
@@ -99,7 +100,7 @@ public class AmplitudeIntegrationFactoryTest {
 
     private void setupAmplitude(AmplitudeDestinationConfig amplitudeDestinationConfig) {
         amplitude = Mockito.mock(Amplitude.class);
-        amplitudeIntegrationFactory.setup(amplitudeDestinationConfig, amplitude);
+        amplitudeIntegrationFactory.setup(amplitudeDestinationConfig, new RudderConfig.Builder().build(), amplitude);
 
     }
 

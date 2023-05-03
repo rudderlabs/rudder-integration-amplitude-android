@@ -16,11 +16,10 @@ import com.amplitude.android.events.Identify;
 import com.amplitude.android.events.Revenue;
 import com.amplitude.android.utilities.AndroidLoggerProvider;
 import com.amplitude.android.utilities.AndroidStorageProvider;
+import com.amplitude.common.Logger;
 import com.amplitude.core.LoggerProvider;
 import com.amplitude.core.ServerZone;
 import com.amplitude.core.StorageProvider;
-import com.amplitude.core.events.IngestionMetadata;
-import com.amplitude.core.events.Plan;
 import com.google.gson.Gson;
 import com.rudderstack.android.sdk.core.MessageType;
 import com.rudderstack.android.sdk.core.RudderClient;
@@ -52,6 +51,8 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     private static final String PARTNER_ID = "Rudderstack";
     private static final String REVENUE_TYPE_LABEL = "revenueType";
     private static final String REVENUE_LABEL = "revenue";
+    private static final String BATCH_SERVER_URL = "https://api2.amplitude.com/batch";
+    private static final String SINGLE_EVENT_SERVER_URL = "https://api2.amplitude.com/2/httpapi";
 //    private static final int MA
 
     private Amplitude amplitude;
@@ -85,7 +86,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         AmplitudeDestinationConfig parsedDestinationConfig = parseDestinationConfig(config);
         if (!assertValidDestinationConfig(parsedDestinationConfig))
             return;
-        setup(parsedDestinationConfig,
+        setup(parsedDestinationConfig, rudderConfig,
                 createAmplitudeInstance(requireNonNull(RudderClient.getApplication()),
                         parsedDestinationConfig, rudderConfig,
                         new AndroidStorageProvider(),
@@ -93,9 +94,15 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     }
 
     @VisibleForTesting
-    void setup(@NonNull AmplitudeDestinationConfig config, @NonNull Amplitude amplitude) {
+    void setup(@NonNull AmplitudeDestinationConfig config,
+               @NonNull RudderConfig rudderConfig,
+               @NonNull Amplitude amplitude) {
         this.destinationConfig = config;
         configureTraitsSettings();
+        Logger amplitudeLogger = amplitude.getLogger();
+        if(amplitudeLogger != null) {
+        amplitudeLogger.setLogMode(getLogMode(rudderConfig.getLogLevel()));
+        }
         this.amplitude = amplitude;
     }
 
@@ -117,9 +124,9 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
                 PARTNER_ID,
                 null,
                 MAX_RETRIES,
-                getUseBatchFromConfig(destinationConfig),
+                isUseBatchFromConfig(destinationConfig),
                 getServerZone(destinationConfig),
-                null,
+                getServerUrl(destinationConfig),
                 null,
                 null,
                 destinationConfig.useAdvertisingIdForDeviceId,
@@ -138,6 +145,20 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         return new Amplitude(configuration);
     }
 
+    private String getServerUrl(AmplitudeDestinationConfig destinationConfig) {
+        return isUseBatchFromConfig(destinationConfig)? BATCH_SERVER_URL : SINGLE_EVENT_SERVER_URL;
+    }
+
+    private Logger.LogMode getLogMode(int logLevel) {
+        switch (logLevel) {
+            case RudderLogger.RudderLogLevel.VERBOSE :
+            case RudderLogger.RudderLogLevel.DEBUG : return Logger.LogMode.DEBUG;
+            case RudderLogger.RudderLogLevel.INFO : return Logger.LogMode.INFO;
+            case RudderLogger.RudderLogLevel.WARN : return Logger.LogMode.WARN;
+            case RudderLogger.RudderLogLevel.ERROR : return Logger.LogMode.ERROR;
+            default: return Logger.LogMode.OFF;
+        }
+    }
 
     private int getFlushIntervalFromConfig(AmplitudeDestinationConfig destinationConfig) {
         if (destinationConfig.eventUploadPeriodMillis > 0)
@@ -156,7 +177,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         return rudderConfig.getSessionTimeout();
     }
 
-       private boolean getUseBatchFromConfig(AmplitudeDestinationConfig destinationConfig) {
+    private boolean isUseBatchFromConfig(AmplitudeDestinationConfig destinationConfig) {
         return destinationConfig.eventUploadThreshold > 0;
     }
 

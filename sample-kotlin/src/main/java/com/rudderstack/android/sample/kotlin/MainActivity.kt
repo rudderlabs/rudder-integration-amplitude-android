@@ -1,6 +1,7 @@
 package com.rudderstack.android.sample.kotlin
 
 import android.os.Bundle
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.rudderlabs.android.sample.kotlin.R
 import com.rudderstack.android.sdk.core.RudderProperty
@@ -15,39 +16,39 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Identify call
-//        MainApplication.rudderClient.identify(
-//            "user_id",
-//            RudderTraits()
-//                .putFirstName("Shane")
-//                .putLastName("Warne")
-//                .putEmail("warne@shane.com"),
-//            null
-//        )
+        MainApplication.rudderClient.identify(
+            "user_id",
+            RudderTraits()
+                .putFirstName("Shane")
+                .putLastName("Warne")
+                .putEmail("warne@shane.com"),
+            null
+        )
 //
 //
 //        // screen call without name and category
-//        MainApplication.rudderClient.screen(
-//            "", "", RudderProperty().putValue("foo", "bar"),
-//            null
-//        )
+        MainApplication.rudderClient.screen(
+            "", "", RudderProperty().putValue("foo", "bar"),
+            null
+        )
 //
-//        // screen call with name and category
-//        MainApplication.rudderClient.screen(
-//            "MainActivity",
-//            "HomeScreen",
-//            RudderProperty().putValue("foo", "bar"),
-//            null
-//        )
+        // screen call with name and category
+        MainApplication.rudderClient.screen(
+            "MainActivity",
+            "HomeScreen",
+            RudderProperty().putValue("foo", "bar"),
+            null
+        )
 //
 //        // group call with group traits
-//        MainApplication.rudderClient.group(
-//            "new_group_id",
-//            RudderTraits().putAge("24")
-//                .putName("Test Group Name")
-//                .putPhone("1234567891")
-//                .put("company_id", "RS")
-//                .put("company_name", "RudderStack")
-//        )
+        MainApplication.rudderClient.group(
+            "new_group_id",
+            RudderTraits().putAge("24")
+                .putName("Test Group Name")
+                .putPhone("1234567891")
+                .put("company_id", "RS")
+                .put("company_name", "RudderStack")
+        )
 //
 //        // normal track call with no event properties
 //        MainApplication.rudderClient.track("account: created")
@@ -196,30 +197,34 @@ class MainActivity : AppCompatActivity() {
 //        )
 
 
-        val Pro3 = mutableMapOf(
-            "productId" to "111",
-            "sku" to "F-32",
-            "name" to "UNO",
-            "price" to 19,
-            "quantity" to 2
-        );
-        val Pro4 = mutableMapOf(
-            "productId" to "222",
-            "sku" to "F-32",
-            "name" to "UNO",
-            "price" to 6,
-            "quantity" to 5
-        );
-        val products1 = mutableListOf(Pro3, Pro4)
-        MainApplication.rudderClient.track(
-            "Item Purchased",
-            RudderProperty()
-                .putValue("orderId", "202020")
-                .putValue("revenue", 100)
-                .putValue("quantity", 2)
-                .putValue("products", products1)
-                .putValue("receipt", "reciept name")
-                .putValue("receiptSignature", "receipt Signature")
-        );
+
+
+        findViewById<Button>(R.id.btn).setOnClickListener {
+            val Pro3 = mutableMapOf(
+                "productId" to "111",
+                "sku" to "F-32",
+                "name" to "UNO",
+                "price" to 19,
+                "quantity" to 2
+            );
+            val Pro4 = mutableMapOf(
+                "productId" to "222",
+                "sku" to "F-32",
+                "name" to "UNO",
+                "price" to 6,
+                "quantity" to 5
+            );
+            val products1 = mutableListOf(Pro3, Pro4)
+            MainApplication.rudderClient.track(
+                "Item Purchased",
+                RudderProperty()
+                    .putValue("orderId", "202020")
+                    .putValue("revenue", 100)
+                    .putValue("quantity", 2)
+                    .putValue("products", products1)
+                    .putValue("receipt", "reciept name")
+                    .putValue("receiptSignature", "receipt Signature")
+            );
+        }
     }
 }
