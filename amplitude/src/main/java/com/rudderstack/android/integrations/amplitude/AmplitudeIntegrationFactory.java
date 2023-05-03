@@ -47,6 +47,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
             HashSet<>(Arrays.asList("order completed",
             "completed order",
             "product purchased")));
+    private static final int MAX_RETRIES = 3;
     private static final boolean DEFAULT_OPT_OUT = false;
     private static final String PARTNER_ID = "Rudderstack";
     private static final String REVENUE_TYPE_LABEL = "revenueType";
@@ -64,7 +65,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     public static final Factory FACTORY = new Factory() {
         @Override
         public RudderIntegration<?> create(Object settings, RudderClient client, RudderConfig rudderConfig) {
-            return new AmplitudeIntegrationFactory(settings);
+            return new AmplitudeIntegrationFactory(settings, rudderConfig);
         }
 
         @Override
@@ -77,7 +78,7 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     AmplitudeIntegrationFactory() {
     }
 
-    private AmplitudeIntegrationFactory(Object config) {
+    private AmplitudeIntegrationFactory(Object config, RudderConfig rudderConfig) {
         super();
         if (!assertValidConfigs(config))
             return;
@@ -86,7 +87,8 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
             return;
         setup(parsedDestinationConfig,
                 createAmplitudeInstance(requireNonNull(RudderClient.getApplication()),
-                        parsedDestinationConfig, new AndroidStorageProvider(),
+                        parsedDestinationConfig, rudderConfig,
+                        new AndroidStorageProvider(),
                         new AndroidLoggerProvider()));
     }
 
@@ -100,90 +102,42 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
     @VisibleForTesting
     Amplitude createAmplitudeInstance(
             @NonNull Application application, AmplitudeDestinationConfig destinationConfig,
+            RudderConfig rudderConfig,
             @NonNull StorageProvider storageProvider, @NonNull LoggerProvider loggerProvider) {
         Configuration configuration = new Configuration(
-                destinationConfig.apiKey, application,
-                getFlushQueueSizeFromConfig(destinationConfig), getFlushIntervalFromConfig(destinationConfig),
-                DEFAULT_INSTANCE_NAME, getOptOutFromConfig(destinationConfig),
-                storageProvider, loggerProvider, null, PARTNER_ID,
-                null, getMaxRetriesFromConfig(destinationConfig),
+                destinationConfig.apiKey,
+                application,
+                getFlushQueueSizeFromConfig(destinationConfig),
+                getFlushIntervalFromConfig(destinationConfig),
+                DEFAULT_INSTANCE_NAME,
+                DEFAULT_OPT_OUT,
+                storageProvider,
+                loggerProvider,
+                null,
+                PARTNER_ID,
+                null,
+                MAX_RETRIES,
                 getUseBatchFromConfig(destinationConfig),
-                getServerZone(destinationConfig), destinationConfig.serverUrl,
-                getPlanFromConfig(destinationConfig),
-                getIngestionMetaDataFromConfig(destinationConfig),
+                getServerZone(destinationConfig),
+                null,
+                null,
+                null,
                 destinationConfig.useAdvertisingIdForDeviceId,
-                getUseAppSetIdForDeviceId(destinationConfig),
-                getNewDeviceIdPerInstall(destinationConfig), getTrackingOptions(destinationConfig.trackingOptions),
-                getEnableCoppaControlFroConfig(destinationConfig), destinationConfig.enableLocationListening,
-                getFlushEventsOnCloseFromConfig(destinationConfig), getMinTimeBetweenSessionMillisFromConfig(destinationConfig),
+                false,
+                false,
+                new TrackingOptions(),
+                false,
+                destinationConfig.enableLocationListening,
+                true,
+                getMinTimeBetweenSessionMillisFromConfig(rudderConfig),
                 destinationConfig.trackSessionEvents,
-                getIdentifyBatchIntervalMillisFromConfig(destinationConfig),
+                com.amplitude.core.Configuration.IDENTIFY_BATCH_INTERVAL_MILLIS,
                 storageProvider
 
         );
         return new Amplitude(configuration);
     }
 
-    private TrackingOptions getTrackingOptions(@Nullable AmplitudeTrackingOptions amplitudeTrackingOptions) {
-        TrackingOptions trackingOptions = new TrackingOptions();
-        if (amplitudeTrackingOptions == null)
-            return trackingOptions;
-        if (amplitudeTrackingOptions.adId != null && !amplitudeTrackingOptions.adId) {
-            trackingOptions.disableAdid();
-        }
-        if (amplitudeTrackingOptions.appSetId != null && !amplitudeTrackingOptions.appSetId) {
-            trackingOptions.disableAppSetId();
-        }
-        if (amplitudeTrackingOptions.carrier != null && !amplitudeTrackingOptions.carrier) {
-            trackingOptions.disableCarrier();
-        }
-        if (amplitudeTrackingOptions.city != null && !amplitudeTrackingOptions.city) {
-            trackingOptions.disableCity();
-        }
-        if (amplitudeTrackingOptions.country != null && !amplitudeTrackingOptions.country) {
-            trackingOptions.disableCountry();
-        }
-        if (amplitudeTrackingOptions.deviceBrand != null && !amplitudeTrackingOptions.deviceBrand) {
-            trackingOptions.disableDeviceBrand();
-        }
-        if (amplitudeTrackingOptions.deviceManufacturer != null && !amplitudeTrackingOptions.deviceManufacturer) {
-            trackingOptions.disableDeviceManufacturer();
-        }
-        if (amplitudeTrackingOptions.deviceModel != null && !amplitudeTrackingOptions.deviceModel) {
-            trackingOptions.disableDeviceModel();
-        }
-        if (amplitudeTrackingOptions.dma != null && !amplitudeTrackingOptions.dma){
-            trackingOptions.disableDma();
-        }
-        if (amplitudeTrackingOptions.ipAddress != null && !amplitudeTrackingOptions.ipAddress) {
-            trackingOptions.disableIpAddress();
-        }
-        if (amplitudeTrackingOptions.language != null && !amplitudeTrackingOptions.language) {
-            trackingOptions.disableLanguage();
-        }
-        if (amplitudeTrackingOptions.latlng != null && !amplitudeTrackingOptions.latlng) {
-            trackingOptions.disableLatLng();
-        }
-        if (amplitudeTrackingOptions.apiLevel != null && !amplitudeTrackingOptions.apiLevel) {
-            trackingOptions.disableApiLevel();
-        }
-        if (amplitudeTrackingOptions.platform != null && !amplitudeTrackingOptions.platform) {
-            trackingOptions.disablePlatform();
-        }
-        if (amplitudeTrackingOptions.region != null && !amplitudeTrackingOptions.region) {
-            trackingOptions.disableRegion();
-        }
-        if (amplitudeTrackingOptions.versionName != null && !amplitudeTrackingOptions.versionName) {
-            trackingOptions.disableVersionName();
-        }
-        if (amplitudeTrackingOptions.osName != null && !amplitudeTrackingOptions.osName) {
-            trackingOptions.disableOsName();
-        }
-        if (amplitudeTrackingOptions.osVersion != null && !amplitudeTrackingOptions.osVersion) {
-            trackingOptions.disableOsVersion();
-        }
-        return trackingOptions;
-    }
 
     private int getFlushIntervalFromConfig(AmplitudeDestinationConfig destinationConfig) {
         if (destinationConfig.eventUploadPeriodMillis > 0)
@@ -197,78 +151,13 @@ public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitu
         return com.amplitude.core.Configuration.FLUSH_QUEUE_SIZE;
     }
 
-    private boolean getEnableCoppaControlFroConfig(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.enableCoppaControl == null)
-            return false;
-        return destinationConfig.enableCoppaControl;
+
+    private long getMinTimeBetweenSessionMillisFromConfig(RudderConfig rudderConfig) {
+        return rudderConfig.getSessionTimeout();
     }
 
-    private boolean getFlushEventsOnCloseFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.flushEventsOnClose == null)
-            return true;
-        return destinationConfig.flushEventsOnClose;
-    }
-
-    private long getMinTimeBetweenSessionMillisFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.minTimeBetweenSessionMillis == null ||
-                destinationConfig.minTimeBetweenSessionMillis == 0)
-            return Configuration.MIN_TIME_BETWEEN_SESSIONS_MILLIS;
-        return destinationConfig.minTimeBetweenSessionMillis;
-    }
-
-    private long getIdentifyBatchIntervalMillisFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.identifyBatchIntervalMillis == null ||
-                destinationConfig.identifyBatchIntervalMillis == 0)
-            return com.amplitude.core.Configuration.IDENTIFY_BATCH_INVERVAL_MILLIS;
-        return destinationConfig.identifyBatchIntervalMillis;
-    }
-
-
-    private IngestionMetadata getIngestionMetaDataFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        AmplitudeIngestionMetadata amplitudeIngestionMetadata = destinationConfig.ingestionMetadata;
-        if (amplitudeIngestionMetadata == null)
-            return null;
-        return new com.amplitude.android.events.IngestionMetadata(amplitudeIngestionMetadata.sourceName,
-                amplitudeIngestionMetadata.sourceVersion);
-    }
-
-    private boolean getUseAppSetIdForDeviceId(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.useAppSetIdForDeviceId == null)
-            return false;
-        return destinationConfig.useAppSetIdForDeviceId;
-    }
-
-    private boolean getNewDeviceIdPerInstall(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.newDeviceIdPerInstall == null)
-            return false;
-        return destinationConfig.newDeviceIdPerInstall;
-    }
-
-    private @Nullable
-    Plan getPlanFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        AmplitudePlan amplitudePlan = destinationConfig.plan;
-        if (amplitudePlan == null)
-            return null;
-        return new Plan(amplitudePlan.branch, amplitudePlan.source, amplitudePlan.version,
-                amplitudePlan.versionId);
-    }
-
-    private boolean getUseBatchFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.useBatch == null)
-            return true;
-        return destinationConfig.useBatch;
-    }
-
-    private int getMaxRetriesFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.flushMaxRetries == null || destinationConfig.flushMaxRetries == 0)
-            return com.amplitude.core.Configuration.FLUSH_MAX_RETRIES;
-        return destinationConfig.flushMaxRetries;
-    }
-
-    private boolean getOptOutFromConfig(AmplitudeDestinationConfig destinationConfig) {
-        if (destinationConfig.optOut == null)
-            return DEFAULT_OPT_OUT;
-        return destinationConfig.optOut;
+       private boolean getUseBatchFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        return destinationConfig.eventUploadThreshold > 0;
     }
 
 
