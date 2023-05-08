@@ -8,8 +8,7 @@ android {
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 33
-        versionCode 1
-        versionName "1.0.1"
+        buildConfigField("String", "VERSION_NAME", "\"${VERSION_NAME}\"")
     }
 
     buildTypes {
@@ -51,5 +50,5 @@ dependencies {
     testImplementation "org.powermock:powermock-api-mockito2:2.0.9"
     testImplementation 'org.awaitility:awaitility:4.2.0'
 }
-
-//apply from: './maven.gradle'
+apply from: rootProject.file('gradle/mvn-publish.gradle')
+apply from: rootProject.file('gradle/codecov.gradle')
