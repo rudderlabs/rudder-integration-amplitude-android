@@ -2,13 +2,12 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 33
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.0.1"
+        minSdkVersion 19
+        targetSdkVersion 33
+        buildConfigField("String", "VERSION_NAME", "\"${VERSION_NAME}\"")
     }
 
     buildTypes {
@@ -33,5 +32,5 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'org.apache.commons:commons-lang3:3.5'
 }
-
-apply from: './maven.gradle'
+apply from: rootProject.file('gradle/mvn-publish.gradle')
+apply from: rootProject.file('gradle/codecov.gradle')
