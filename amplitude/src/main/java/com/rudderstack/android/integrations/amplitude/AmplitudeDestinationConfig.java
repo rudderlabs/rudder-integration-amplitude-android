@@ -5,8 +5,6 @@ import java.util.Map;
 
 public class AmplitudeDestinationConfig {
     String apiKey;
-//    String groupTypeTrait;
-//    String groupValueTrait;
     int eventUploadPeriodMillis;
     int eventUploadThreshold;
     boolean trackAllPages;
@@ -17,6 +15,7 @@ public class AmplitudeDestinationConfig {
     boolean enableLocationListening;
     boolean useAdvertisingIdForDeviceId;
     boolean trackSessionEvents;
+    String residencyServer;
     List<Map<String, Object>> traitsToIncrement;
     List<Map<String, Object>> traitsToSetOnce;
     List<Map<String, Object>> traitsToAppend;

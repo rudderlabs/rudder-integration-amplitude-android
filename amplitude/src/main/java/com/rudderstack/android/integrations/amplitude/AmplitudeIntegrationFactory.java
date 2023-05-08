@@ -1,15 +1,25 @@
 package com.rudderstack.android.integrations.amplitude;
 
+import static java.util.Objects.requireNonNull;
+
+import android.app.Application;
 import android.text.TextUtils;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
-import com.amplitude.api.Amplitude;
-import com.amplitude.api.AmplitudeClient;
-import com.amplitude.api.Identify;
-import com.amplitude.api.Revenue;
+import com.amplitude.android.Amplitude;
+import com.amplitude.android.Configuration;
+import com.amplitude.android.TrackingOptions;
+import com.amplitude.android.events.Identify;
+import com.amplitude.android.events.Revenue;
+import com.amplitude.android.utilities.AndroidLoggerProvider;
+import com.amplitude.android.utilities.AndroidStorageProvider;
+import com.amplitude.common.Logger;
+import com.amplitude.core.LoggerProvider;
+import com.amplitude.core.ServerZone;
+import com.amplitude.core.StorageProvider;
 import com.google.gson.Gson;
 import com.rudderstack.android.sdk.core.MessageType;
 import com.rudderstack.android.sdk.core.RudderClient;
@@ -22,25 +32,38 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.NumberFormat;
-import java.text.ParseException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClient> {
+public final class AmplitudeIntegrationFactory extends RudderIntegration<Amplitude> {
     private static final String AMPLITUDE_KEY = "Amplitude";
     private static final String VIEWED_EVENT_FORMAT = "Viewed %s Screen ";
+    private static final String DEFAULT_INSTANCE_NAME = "DEFAULT_INSTANCE";
+    private static final Set<String> REVENUE_TYPE_SET = Collections.unmodifiableSet(new
+            HashSet<>(Arrays.asList("order completed",
+            "completed order",
+            "product purchased")));
+    private static final int MAX_RETRIES = 3;
+    private static final boolean DEFAULT_OPT_OUT = false;
+    private static final String PARTNER_ID = "Rudderstack";
+    private static final String REVENUE_TYPE_LABEL = "revenueType";
+    private static final String REVENUE_LABEL = "revenue";
+    private static final String BATCH_SERVER_URL = "https://api2.amplitude.com/batch";
+    private static final String SINGLE_EVENT_SERVER_URL = "https://api2.amplitude.com/2/httpapi";
+//    private static final int MA
 
-    private AmplitudeClient amplitude;
+    private Amplitude amplitude;
     private AmplitudeDestinationConfig destinationConfig;
-
     private Set<String> traitsToIncrement;
     private Set<String> traitsToSetOnce;
     private Set<String> traitsToAppend;
     private Set<String> traitsToPrepend;
 
-    public static Factory FACTORY = new Factory() {
+
+    public static final Factory FACTORY = new Factory() {
         @Override
         public RudderIntegration<?> create(Object settings, RudderClient client, RudderConfig rudderConfig) {
             return new AmplitudeIntegrationFactory(settings, rudderConfig);
@@ -52,27 +75,121 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         }
     };
 
+    @VisibleForTesting
+    AmplitudeIntegrationFactory() {
+    }
+
     private AmplitudeIntegrationFactory(Object config, RudderConfig rudderConfig) {
-        if (RudderClient.getApplication() == null) {
-            RudderLogger.logError("Application is null. Aborting Amplitude initialization.");
+        super();
+        if (!assertValidConfigs(config))
             return;
-        }
-
-        if (config == null) {
-            RudderLogger.logError("Invalid api key. Aborting Amplitude initialization.");
+        AmplitudeDestinationConfig parsedDestinationConfig = parseDestinationConfig(config);
+        if (!assertValidDestinationConfig(parsedDestinationConfig))
             return;
+        setup(parsedDestinationConfig, rudderConfig,
+                createAmplitudeInstance(requireNonNull(RudderClient.getApplication()),
+                        parsedDestinationConfig, rudderConfig,
+                        new AndroidStorageProvider(),
+                        new AndroidLoggerProvider()));
+    }
+
+    @VisibleForTesting
+    void setup(@NonNull AmplitudeDestinationConfig config,
+               @NonNull RudderConfig rudderConfig,
+               @NonNull Amplitude amplitude) {
+        this.destinationConfig = config;
+        configureTraitsSettings();
+        Logger amplitudeLogger = amplitude.getLogger();
+        if(amplitudeLogger != null) {
+        amplitudeLogger.setLogMode(getLogMode(rudderConfig.getLogLevel()));
         }
+        this.amplitude = amplitude;
+    }
 
-        // parse server config
-        Gson gson = new Gson();
-        this.destinationConfig = gson.fromJson(gson.toJson(config), AmplitudeDestinationConfig.class);
+    @VisibleForTesting
+    Amplitude createAmplitudeInstance(
+            @NonNull Application application, AmplitudeDestinationConfig destinationConfig,
+            RudderConfig rudderConfig,
+            @NonNull StorageProvider storageProvider, @NonNull LoggerProvider loggerProvider) {
+        Configuration configuration = new Configuration(
+                destinationConfig.apiKey,
+                application,
+                getFlushQueueSizeFromConfig(destinationConfig),
+                getFlushIntervalFromConfig(destinationConfig),
+                DEFAULT_INSTANCE_NAME,
+                DEFAULT_OPT_OUT,
+                storageProvider,
+                loggerProvider,
+                null,
+                PARTNER_ID,
+                null,
+                MAX_RETRIES,
+                isUseBatchFromConfig(destinationConfig),
+                getServerZone(destinationConfig),
+                getServerUrl(destinationConfig),
+                null,
+                null,
+                destinationConfig.useAdvertisingIdForDeviceId,
+                false,
+                false,
+                new TrackingOptions(),
+                false,
+                destinationConfig.enableLocationListening,
+                true,
+                getMinTimeBetweenSessionMillisFromConfig(rudderConfig),
+                destinationConfig.trackSessionEvents,
+                com.amplitude.core.Configuration.IDENTIFY_BATCH_INTERVAL_MILLIS,
+                storageProvider
 
-        if (TextUtils.isEmpty(this.destinationConfig.apiKey)) {
-            RudderLogger.logError("Invalid api key. Aborting Amplitude initialization.");
-            return;
+        );
+        return new Amplitude(configuration);
+    }
+
+    private String getServerUrl(AmplitudeDestinationConfig destinationConfig) {
+        return isUseBatchFromConfig(destinationConfig)? BATCH_SERVER_URL : SINGLE_EVENT_SERVER_URL;
+    }
+
+    private Logger.LogMode getLogMode(int logLevel) {
+        switch (logLevel) {
+            case RudderLogger.RudderLogLevel.VERBOSE :
+            case RudderLogger.RudderLogLevel.DEBUG : return Logger.LogMode.DEBUG;
+            case RudderLogger.RudderLogLevel.INFO : return Logger.LogMode.INFO;
+            case RudderLogger.RudderLogLevel.WARN : return Logger.LogMode.WARN;
+            case RudderLogger.RudderLogLevel.ERROR : return Logger.LogMode.ERROR;
+            default: return Logger.LogMode.OFF;
         }
+    }
 
-        // traits settings
+    private int getFlushIntervalFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if (destinationConfig.eventUploadPeriodMillis > 0)
+            return destinationConfig.eventUploadPeriodMillis;
+        return com.amplitude.core.Configuration.FLUSH_INTERVAL_MILLIS;
+    }
+
+    private int getFlushQueueSizeFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        if (destinationConfig.eventUploadThreshold > 0)
+            return destinationConfig.eventUploadThreshold;
+        return com.amplitude.core.Configuration.FLUSH_QUEUE_SIZE;
+    }
+
+
+    private long getMinTimeBetweenSessionMillisFromConfig(RudderConfig rudderConfig) {
+        return rudderConfig.getSessionTimeout();
+    }
+
+    private boolean isUseBatchFromConfig(AmplitudeDestinationConfig destinationConfig) {
+        return destinationConfig.eventUploadThreshold > 0;
+    }
+
+
+    private ServerZone getServerZone(AmplitudeDestinationConfig config) {
+        if ("EU".equals(config.residencyServer)) {
+            return ServerZone.US;
+        }
+        return ServerZone.EU;
+    }
+
+    private void configureTraitsSettings() {
         if (this.destinationConfig.traitsToIncrement != null) {
             this.traitsToIncrement = Utils.getStringSet(this.destinationConfig.traitsToIncrement);
         }
@@ -85,216 +202,54 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
         if (this.destinationConfig.traitsToPrepend != null) {
             this.traitsToPrepend = Utils.getStringSet(this.destinationConfig.traitsToPrepend);
         }
-
-        // all good. initialize amplitude sdk
-        this.amplitude = Amplitude.getInstance();
-        this.amplitude.initialize(RudderClient.getApplication(), this.destinationConfig.apiKey)
-                .setLogLevel(
-                        rudderConfig.getLogLevel() >= RudderLogger.RudderLogLevel.DEBUG
-                                ? Log.VERBOSE
-                                : Log.ERROR
-                );
-
-        // enabling Foreground Tracking
-        this.amplitude.enableForegroundTracking(RudderClient.getApplication());
-
-        // configuring Track Session Events
-        this.amplitude.trackSessionEvents(this.destinationConfig.trackSessionEvents);
-
-        // Configuring Location Listening
-        if (!this.destinationConfig.enableLocationListening) {
-            this.amplitude.disableLocationListening();
-        }
-
-        // Configuring usage of Advertising Id as Device Id
-        if (this.destinationConfig.useAdvertisingIdForDeviceId) {
-            this.amplitude.useAdvertisingIdForDeviceId();
-        }
-
-        // configuring batching settings
-        this.amplitude.setEventUploadPeriodMillis(this.destinationConfig.eventUploadPeriodMillis);
-        this.amplitude.setEventUploadThreshold(this.destinationConfig.eventUploadThreshold);
-        RudderLogger.logInfo("Configured Amplitude + Rudder integration and initialized Amplitude.");
     }
 
-    private void processRudderEvent(RudderMessage element) throws Exception {
-        String type = element.getType();
-        if (type != null) {
-            switch (type) {
-                case MessageType.IDENTIFY:
-                    String userId = element.getUserId();
-                    if (!TextUtils.isEmpty(userId)) {
-                        this.amplitude.setUserId(userId);
-                    }
-                    Map<String, Object> traits = element.getTraits();
-                    boolean optOutOfSession = false;
-                    if (traits.containsKey("optOutOfSession")) {
-                        optOutOfSession = (boolean) traits.get("optOutOfSession");
-                    }
-                    handleTraits(traits, optOutOfSession);
-                    break;
-                case MessageType.TRACK:
-                    String eventName = element.getEventName();
-                    if (eventName != null) {
-                        Map<String, Object> eventProperties = element.getProperties();
-                        JSONArray products = Utils.getProducts(eventProperties);
-                        // if track products once is enabled
-                        if (this.destinationConfig.trackProductsOnce) {
-                            // if track products once is enabled and  we are having products array
-                            if (products != null && eventProperties != null) {
-                                JSONArray simplifiedProducts = Utils.simplifyProducts(products);
-                                eventProperties.put("products", simplifiedProducts);
-                                logEventAndCorrespondingRevenue(
-                                        eventProperties,
-                                        eventName,
-                                        this.destinationConfig.trackRevenuePerProduct
-                                );
-                                // if track revenue per product is enabled
-                                if (this.destinationConfig.trackRevenuePerProduct) {
-                                    trackingEventAndRevenuePerProduct(
-                                            eventProperties,
-                                            products,
-                                            false
-                                    );
-                                }
-                                return;
-                            }
-                            // if track products once is enabled and
-                            // we are not having a products array
-                            logEventAndCorrespondingRevenue(
-                                    eventProperties,
-                                    eventName,
-                                    false
-                            );
-                            return;
-                        }
-                        // if track products once is disabled and we are having a products array
-                        if (products != null && eventProperties != null) {
-                            // removing products property from event properties to make
-                            // a call with no products first and then we will make a call for
-                            // each product separately as trackProductsOnce is disabled
-                            eventProperties.remove("products");
-                            logEventAndCorrespondingRevenue(
-                                    eventProperties,
-                                    eventName,
-                                    this.destinationConfig.trackRevenuePerProduct
-                            );
-                            trackingEventAndRevenuePerProduct(
-                                    eventProperties,
-                                    products,
-                                    true
-                            );
-                            return;
-                        }
-                        // if track products once is disabled and we are not having a products array
-                        logEventAndCorrespondingRevenue(
-                                eventProperties,
-                                eventName,
-                                false
-                        );
-                    }
-                    break;
-                case MessageType.SCREEN:
-                    Map<String, Object> properties = element.getProperties();
-                    JSONObject propertiesJSON = null;
-                    if (properties != null) {
-                        propertiesJSON = new JSONObject(properties);
-                    }
-                    if (this.destinationConfig.trackAllPages) {
-                        if (propertiesJSON != null &&
-                                propertiesJSON.has("name") &&
-                                !TextUtils.isEmpty((String) propertiesJSON.get("name"))
-                        ) {
-                            this.amplitude.logEvent(
-                                    String.format(VIEWED_EVENT_FORMAT, propertiesJSON.get("name")),
-                                    propertiesJSON,
-                                    null,
-                                    false
-                            );
-                        } else {
-                            this.amplitude.logEvent(
-                                    "Loaded a Screen",
-                                    propertiesJSON,
-                                    null,
-                                    false
-                            );
-                        }
-                    }
-                    if (this.destinationConfig.trackCategorizedPages &&
-                            propertiesJSON != null &&
-                            propertiesJSON.has("category") &&
-                            !TextUtils.isEmpty((String) propertiesJSON.get("category"))
-                    ) {
-                        this.amplitude.logEvent(
-                                String.format(VIEWED_EVENT_FORMAT, propertiesJSON.get("category")),
-                                propertiesJSON,
-                                null,
-                                false
-                        );
-                    }
-                    if (this.destinationConfig.trackNamedPages &&
-                            propertiesJSON != null &&
-                            propertiesJSON.has("name") &&
-                            !TextUtils.isEmpty((String) propertiesJSON.get("name"))
-                    ) {
-                        this.amplitude.logEvent(
-                                String.format(VIEWED_EVENT_FORMAT, propertiesJSON.get("name")),
-                                propertiesJSON,
-                                null,
-                                false
-                        );
-                    }
-                    break;
-//                case MessageType.GROUP:
-//                    String groupName = null;
-//                    String groupValue = element.getUserId();
-//                    Map<String, Object> groupTraits = element.getTraits();
-//                    if (groupTraits != null && groupTraits.size() != 0) {
-//                        if (groupTraits.containsKey(this.destinationConfig.groupTypeTrait) && groupTraits.containsKey(this.destinationConfig.groupValueTrait)) {
-//                            groupName = (String) groupTraits.get(this.destinationConfig.groupTypeTrait);
-//                            groupValue = (String) groupTraits.get(this.destinationConfig.groupValueTrait);
-//                        }
-//                    }
-//                    if (groupName == null) {
-//                        groupName = "[RudderStack] Group";
-//                    }
-//                    // Set group
-//                    this.amplitude.setGroup(groupName, groupValue);
-//                    // Set group properties
-//                    Identify groupIdentify = new Identify();
-//                    groupIdentify.set("library", "RudderStack");
-//                    if (groupTraits != null && groupTraits.size() != 0) {
-//                        groupIdentify.set("group_properties", new JSONObject(groupTraits));
-//                    }
-//                    this.amplitude.groupIdentify(groupName, groupValue, groupIdentify);
-//                    break;
-                default:
-                    RudderLogger.logWarn("AmplitudeIntegrationFactory: MessageType is not specified");
-                    break;
-            }
+    private boolean assertValidDestinationConfig(AmplitudeDestinationConfig destinationConfig) {
+        if (TextUtils.isEmpty(destinationConfig.apiKey)) {
+            RudderLogger.logError("Invalid api key. Aborting Amplitude initialization.");
+            return false;
         }
+        return true;
+    }
+
+    private AmplitudeDestinationConfig parseDestinationConfig(Object config) {
+        // parse server config
+        Gson gson = new Gson();
+        return gson.fromJson(gson.toJson(config), AmplitudeDestinationConfig.class);
+
+    }
+
+    private boolean assertValidConfigs(Object config) {
+        if (RudderClient.getApplication() == null) {
+            RudderLogger.logError("Application is null. Aborting Amplitude initialization.");
+            return false;
+        }
+
+        if (config == null) {
+            RudderLogger.logError("Invalid api key. Aborting Amplitude initialization.");
+            return false;
+        }
+        return true;
     }
 
     @Override
     public void flush() {
         super.flush();
-        this.amplitude.uploadEvents();
+        this.amplitude.flush();
         RudderLogger.logDebug("Amplitude uploadEvents().");
     }
 
     @Override
     public void reset() {
-        this.amplitude.setUserId(null);
-        this.amplitude.regenerateDeviceId();
-        RudderLogger.logVerbose("Amplitude setUserId(null).");
-        RudderLogger.logVerbose("Amplitude regenerateDeviceId().");
+        this.amplitude.reset();
+        RudderLogger.logVerbose("Amplitude reset().");
     }
 
     @Override
-    public void dump(@Nullable RudderMessage element) {
+    public void dump(RudderMessage rudderMessage) {
         try {
-            if (element != null) {
-                processRudderEvent(element);
+            if (rudderMessage != null) {
+                processRudderEvent(rudderMessage);
             }
         } catch (Exception e) {
             RudderLogger.logError(e);
@@ -302,169 +257,322 @@ public class AmplitudeIntegrationFactory extends RudderIntegration<AmplitudeClie
     }
 
     @Override
-    public AmplitudeClient getUnderlyingInstance() {
+    public Amplitude getUnderlyingInstance() {
         return this.amplitude;
     }
 
-    private void handleTraits(Map<String, Object> traits, Boolean optOutOfSession) {
-        Identify identify = new Identify();
-        for (Map.Entry<String, Object> entry : traits.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            if (this.traitsToIncrement.contains(key)) {
-                TraitsHandler.incrementTrait(key, value, identify);
-                continue;
-            }
-            if (this.traitsToSetOnce.contains(key)) {
-                TraitsHandler.setOnce(key, value, identify);
-                continue;
-            }
-            if (this.traitsToAppend.contains(key)) {
-                TraitsHandler.appendTrait(key, value, identify);
-                continue;
-            }
-            if (this.traitsToPrepend.contains(key)) {
-                TraitsHandler.prependTrait(key, value, identify);
-                continue;
-            }
-            TraitsHandler.setTrait(key, value, identify);
+    private void processRudderEvent(RudderMessage message) throws Exception {
+        String type = message.getType();
+        if (type == null)
+            return;
+        switch (type) {
+            case MessageType.IDENTIFY:
+                identify(message);
+                break;
+            case MessageType.TRACK:
+                track(message);
+                break;
+            case MessageType.SCREEN:
+                screen(message);
+                break;
+            default:
+                RudderLogger.logError(type + " is not supported for Amplitude. Dropping event");
         }
-        this.amplitude.identify(identify, optOutOfSession);
     }
 
-    private void logEventAndCorrespondingRevenue(
-            Map<String, Object> eventProperties,
-            String eventName,
-            boolean doNotTrackRevenue
-    ) {
-        if (eventProperties == null) {
-            this.amplitude.logEvent(eventName);
+    private void screen(RudderMessage message) {
+        Map<String, Object> properties = message.getProperties();
+        if (this.destinationConfig.trackAllPages) {
+            trackAllPages(properties);
+        }
+        if (this.destinationConfig.trackCategorizedPages) {
+            trackCategorizedPages(properties);
+        }
+        if (this.destinationConfig.trackNamedPages) {
+            trackNamedPages(properties);
+        }
+    }
+
+    private void trackNamedPages(Map<String, Object> properties) {
+        if (properties == null)
+            return;
+        Object categoryObject = properties.get("name");
+        if (categoryObject instanceof String && !TextUtils.isEmpty((String) categoryObject)) {
+            amplitude.track(String.format(VIEWED_EVENT_FORMAT, categoryObject),
+                    properties);
+        }
+    }
+
+    private void trackCategorizedPages(Map<String, Object> properties) {
+        if (properties == null)
+            return;
+        Object categoryObject = properties.get("category");
+        if (categoryObject instanceof String && !TextUtils.isEmpty((String) categoryObject)) {
+            amplitude.track(String.format(VIEWED_EVENT_FORMAT, categoryObject),
+                    properties);
+        }
+    }
+
+    private void trackAllPages(Map<String, Object> properties) {
+        if (properties == null)
+            return;
+        Object nameObject = properties.get("name");
+
+        if (nameObject instanceof String && !TextUtils.isEmpty((String) nameObject)) {
+            this.amplitude.track(String.format(VIEWED_EVENT_FORMAT, nameObject),
+                    properties);
+        } else {
+            this.amplitude.track("Loaded a Screen",
+                    properties);
+        }
+    }
+
+    @VisibleForTesting
+    void track(RudderMessage message) throws Exception {
+        String eventName = message.getEventName();
+        if (eventName == null) {
             return;
         }
-        boolean optOutOfSession = false;
-        JSONObject eventPropsObject = new JSONObject(eventProperties);
-        // should move optOutOfSession to RudderOption
-        // in feature Instead of sending it in Event Properties
-        if (eventProperties.containsKey("optOutOfSession")) {
-            optOutOfSession = (boolean) eventProperties.get("optOutOfSession");
+        Map<String, Object> eventProperties = message.getProperties();
+        JSONArray products = Utils.getProducts(eventProperties);
+        if (this.destinationConfig.trackProductsOnce) {
+            trackProductOnce(products, eventName, eventProperties);
+            return;
         }
-        this.amplitude.logEvent(
+        // if track products once is disabled and we are having a products array
+        if (products != null && eventProperties != null) {
+            trackProductArray(products, eventName, eventProperties);
+            return;
+        }
+        // if track products once is disabled and we are not having a products array
+        trackEventAndCorrespondingRevenue(
+                eventProperties,
                 eventName,
-                eventPropsObject,
-                null,
-                optOutOfSession
+                false
         );
-        if (eventProperties.containsKey("revenue") && !doNotTrackRevenue) {
-            this.trackRevenue(eventProperties, eventName);
-        }
     }
 
-    private void trackRevenue(
-            @Nullable Map<String, Object> eventProperties,
-            @NonNull String eventName
-    ) {
-        HashSet<String> revenueEventTypeSet = new HashSet<>();
-        revenueEventTypeSet.add("order completed");
-        revenueEventTypeSet.add("completed order");
-        revenueEventTypeSet.add("product purchased");
+    private void trackProductArray(JSONArray products, String eventName,
+                                   Map<String, Object> eventProperties) throws JSONException {
+        // removing products property from event properties to make
+        // a call with no products first and then we will make a call for
+        // each product separately as trackProductsOnce is disabled
+        eventProperties.remove("products");
+        trackEventAndCorrespondingRevenue(
+                eventProperties,
+                eventName,
+                this.destinationConfig.trackRevenuePerProduct
+        );
+        trackEventAndRevenuePerProduct(
+                eventProperties,
+                products,
+                true
+        );
+    }
 
-        double quantity = 0;
-        double revenue = 0;
-        double price = 0;
-
-        if (eventProperties == null) {
-            RudderLogger.logDebug("AmplitudeIntegration: eventProperties is null");
-            return;
-        }
-
-        Revenue amplitudeRevenue = new Revenue();
-        amplitudeRevenue.setEventProperties(new JSONObject(eventProperties));
-
-        if (eventProperties.containsKey("quantity")) {
-            quantity = new NumberObject(eventProperties.get("quantity"))
-                    .getNumber();
-        }
-
-        if (eventProperties.containsKey("revenue")) {
-            revenue = new NumberObject(eventProperties.get("revenue")).getNumber();
-        }
-
-        if (eventProperties.containsKey("price")) {
-            price = new NumberObject(eventProperties.get("price")).getNumber();
-        }
-
-        if (revenue == 0 && price == 0) {
-            RudderLogger.logDebug("revenue or price is not present.");
-            return;
-        }
-
-        if (price == 0) {
-            price = revenue;
-            quantity = 1;
-        }
-
-        if (quantity == 0) {
-            quantity = 1;
-        }
-        amplitudeRevenue.setPrice(price);
-        amplitudeRevenue.setQuantity((int) quantity);
-
-        if (eventProperties.containsKey("productId")) {
-            amplitudeRevenue.setProductId(String.valueOf(eventProperties.get("productId")));
-        } else if (eventProperties.containsKey("product_id")) {
-            amplitudeRevenue.setProductId(String.valueOf(eventProperties.get("product_id")));
-        }
-
-        if (eventProperties.containsKey("revenueType")) {
-            amplitudeRevenue.setRevenueType((String) eventProperties.get("revenueType"));
-        } else if (eventProperties.containsKey("revenue_type")) {
-            amplitudeRevenue.setRevenueType((String) eventProperties.get("revenue_type"));
-        } else if (revenueEventTypeSet.contains(eventName.toLowerCase())) {
-            amplitudeRevenue.setRevenueType("Purchase");
-        }
-
-        if (eventProperties.containsKey("receipt") &&
-                eventProperties.containsKey("receiptSignature")
-        ) {
-            amplitudeRevenue.setReceipt(
-                    (String) eventProperties.get("receipt"),
-                    (String) eventProperties.get("receiptSignature")
+    private void trackProductOnce(JSONArray products, String eventName,
+                                  Map<String, Object> eventProperties) throws Exception {
+        // if track products once is enabled and  we are having products array
+        if (products != null && eventProperties != null) {
+            JSONArray simplifiedProducts = Utils.simplifyProducts(products);
+            eventProperties.put("products", simplifiedProducts);
+            trackEventAndCorrespondingRevenue(
+                    eventProperties,
+                    eventName,
+                    this.destinationConfig.trackRevenuePerProduct
             );
+            // if track revenue per product is enabled
+            if (this.destinationConfig.trackRevenuePerProduct) {
+                trackEventAndRevenuePerProduct(
+                        eventProperties,
+                        products,
+                        false
+                );
+            }
+            return;
         }
-
-        this.amplitude.logRevenueV2(amplitudeRevenue);
+        // if track products once is enabled and
+        // we are not having a products array
+        trackEventAndCorrespondingRevenue(
+                eventProperties,
+                eventName,
+                false
+        );
     }
 
-    private void trackingEventAndRevenuePerProduct(
-            Map<String, Object> eventProperties,
-            JSONArray allProducts,
-            boolean shouldTrackEventPerProduct
-    ) throws JSONException {
-        String revenueType = null;
-        if (eventProperties.containsKey("revenueType")) {
-            revenueType = (String) eventProperties.get("revenueType");
-        } else if (eventProperties.containsKey("revenue_type")) {
-            revenueType = (String) eventProperties.get("revenue_type");
-        }
+    private void trackEventAndRevenuePerProduct(Map<String, Object> eventProperties, JSONArray allProducts,
+                                                boolean shouldTrackEventPerProduct) throws JSONException {
+        String revenueType = getRevenueTypeFromProperties(eventProperties);
 
         for (int i = 0; i < allProducts.length(); i++) {
             JSONObject product = (JSONObject) allProducts.get(i);
-            if (this.destinationConfig.trackRevenuePerProduct) {
-                if (revenueType != null) {
-                    product.put("revenueType", revenueType);
-                }
-                trackRevenue(
-                        Utils.jsonToMap(product),
-                        "Product Purchased"
-                );
-            }
+            trackProductRevenue(revenueType, product);
             if (shouldTrackEventPerProduct) {
-                logEventAndCorrespondingRevenue(
+                trackEventAndCorrespondingRevenue(
                         Utils.jsonToMap(product),
                         "Product Purchased",
                         true
                 );
             }
         }
+    }
+
+    private void trackProductRevenue(String revenueType, JSONObject product) throws JSONException {
+        if (this.destinationConfig.trackRevenuePerProduct) {
+            if (revenueType != null) {
+                product.put(REVENUE_TYPE_LABEL, revenueType);
+            }
+            trackRevenue(
+                    Utils.jsonToMap(product),
+                    "Product Purchased"
+            );
+        }
+
+    }
+
+    private @Nullable
+    String getRevenueTypeFromProperties(Map<String, Object> eventProperties) {
+        if (eventProperties.containsKey(REVENUE_TYPE_LABEL)) {
+            return (String) eventProperties.get(REVENUE_TYPE_LABEL);
+        }
+        return null;
+    }
+
+    private void trackEventAndCorrespondingRevenue(Map<String, Object> eventProperties,
+                                                   String eventName, boolean doNotTrackRevenue) {
+        if (eventProperties == null) {
+            this.amplitude.track(eventName);
+            return;
+        }
+        amplitude.track(eventName, eventProperties);
+        if (eventProperties.containsKey(REVENUE_LABEL) && !doNotTrackRevenue) {
+            trackRevenue(eventProperties, eventName);
+        }
+    }
+
+    private void trackRevenue(Map<String, Object> eventProperties, String eventName) {
+        if (eventProperties == null) {
+            RudderLogger.logDebug("AmplitudeIntegration: eventProperties is null");
+            return;
+        }
+        Revenue revenue = new Revenue();
+        revenue.setProperties(eventProperties);
+        updateRevenueWithValues(revenue, eventName, eventProperties);
+        amplitude.revenue(revenue);
+    }
+
+    private void updateRevenueWithValues(Revenue revenue, String eventName,
+                                         Map<String, Object> eventProperties) {
+        updateRevenueWithPricingDetails(revenue, eventProperties);
+        updateRevenueWithroductDetails(revenue, eventProperties);
+        updateRevenueWithRevenueDetails(revenue, eventName, eventProperties);
+        updateRevenueWithReceiptDetails(revenue, eventProperties);
+
+    }
+
+    private void updateRevenueWithReceiptDetails(Revenue revenue, Map<String, Object> eventProperties) {
+        Object receipt = eventProperties.get("receipt");
+        Object receiptSignature = eventProperties.get("receiptSignature");
+        if (receipt instanceof String && receiptSignature instanceof String
+        ) {
+            revenue.setReceipt(
+                    (String) receipt,
+                    (String) receiptSignature
+            );
+        }
+    }
+
+    private void updateRevenueWithRevenueDetails(Revenue revenue, String eventName,
+                                                 Map<String, Object> eventProperties) {
+        if (eventProperties.containsKey(REVENUE_TYPE_LABEL)) {
+            revenue.setRevenueType((String) eventProperties.get(REVENUE_TYPE_LABEL));
+        } else if (REVENUE_TYPE_SET.contains(eventName.toLowerCase())) {
+            revenue.setRevenueType("Purchase");
+        }
+
+    }
+
+    private void updateRevenueWithroductDetails(Revenue revenue, Map<String, Object> eventProperties) {
+        if (eventProperties.containsKey("productId")) {
+            revenue.setProductId(String.valueOf(eventProperties.get("productId")));
+        } else if (eventProperties.containsKey("product_id")) {
+            revenue.setProductId(String.valueOf(eventProperties.get("product_id")));
+        }
+
+    }
+
+    private void updateRevenueWithPricingDetails(Revenue revenue, Map<String, Object> eventProperties) {
+        double quantity = 0;
+        double revenueValue = 0;
+        double price = 0;
+        if (eventProperties.containsKey("quantity")) {
+            quantity = new NumberObject(eventProperties.get("quantity"))
+                    .getNumber();
+        }
+
+        if (eventProperties.containsKey(REVENUE_LABEL)) {
+            revenueValue = new NumberObject(eventProperties.get(REVENUE_LABEL)).getNumber();
+        }
+
+        if (eventProperties.containsKey("price")) {
+            price = new NumberObject(eventProperties.get("price")).getNumber();
+        }
+
+        if (revenueValue == 0 && price == 0) {
+            RudderLogger.logDebug("revenue or price is not present.");
+            return;
+        }
+
+        if (price == 0) {
+            price = revenueValue;
+            quantity = 1;
+        }
+
+        if (quantity == 0) {
+            quantity = 1;
+        }
+        revenue.setPrice(price);
+        revenue.setQuantity((int) quantity);
+    }
+
+
+    private void identify(RudderMessage message) {
+        String userId = message.getUserId();
+        if (!TextUtils.isEmpty(userId)) {
+            this.amplitude.setUserId(userId);
+        }
+        Map<String, Object> traits = message.getTraits();
+        com.amplitude.core.events.Identify identify = configureTraits(traits);
+        amplitude.identify(identify);
+    }
+
+    private Identify configureTraits(Map<String, Object> traits) {
+        Identify identify = new Identify();
+        for (Map.Entry<String, Object> entry : traits.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            addTraitToIdentify(identify, key, value);
+        }
+        return identify;
+    }
+
+    private void addTraitToIdentify(Identify identify, String key, Object property) {
+        if (traitsToIncrement != null && this.traitsToIncrement.contains(key)) {
+            TraitsHandler.incrementTrait(identify, key, property);
+            return;
+        }
+        if (traitsToSetOnce != null && this.traitsToSetOnce.contains(key)) {
+            TraitsHandler.setOnce(identify, key, property);
+            return;
+        }
+        if (traitsToAppend != null && this.traitsToAppend.contains(key)) {
+            TraitsHandler.appendTrait(identify, key, property);
+            return;
+        }
+        if (traitsToPrepend != null && this.traitsToPrepend.contains(key)) {
+            TraitsHandler.prependTrait(identify, key, property);
+            return;
+        }
+        TraitsHandler.setTrait(identify, key, property);
     }
 }
