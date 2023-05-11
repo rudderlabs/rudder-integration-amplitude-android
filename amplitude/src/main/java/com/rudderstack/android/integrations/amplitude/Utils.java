@@ -80,7 +80,7 @@ class Utils {
             return (JSONArray) object;
         } else {
             // if the object received was ArrayList
-            return new JSONArray((ArrayList) object);
+            return new JSONArray((List) object);
         }
     }
 }

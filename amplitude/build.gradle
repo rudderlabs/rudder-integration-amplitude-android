@@ -3,6 +3,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 33
+    namespace "com.rudderstack.android.integrations.amplitude"
 
     defaultConfig {
         minSdkVersion 19
@@ -23,14 +24,31 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.annotation:annotation:1.1.0'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
     // rudder core sdk
-    compileOnly 'com.rudderstack.android.sdk:core:1.+'
+    compileOnly 'com.rudderstack.android.sdk:core:1.12.0'
     // Amplitude Android Sdk
-    implementation 'com.amplitude:android-sdk:2.25.2'
-    implementation 'com.squareup.okhttp3:okhttp:4.2.2'
+    implementation 'com.amplitude:analytics-android:1.+'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.2'
     // GSON dependency
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'org.apache.commons:commons-lang3:3.5'
+
+    testImplementation 'com.rudderstack.android.sdk:core:1.12.0'
+    testImplementation 'org.robolectric:robolectric:4.3'
+    testImplementation 'androidx.test:core-ktx:1.5.0'
+    testImplementation "org.hamcrest:hamcrest:2.2"
+    testImplementation "org.mockito:mockito-core:3.11.2"
+
+    testImplementation "org.powermock:powermock-core:2.0.9"
+    testImplementation ("org.powermock:powermock-module-junit4:2.0.9"){
+        exclude group: 'org.hamcrest', module: 'hamcrest'
+    }
+    testImplementation "org.skyscreamer:jsonassert:1.5.1"
+
+    testImplementation "org.powermock:powermock-api-mockito2:2.0.9"
+    testImplementation 'org.awaitility:awaitility:4.2.0'
 }
 apply from: rootProject.file('gradle/mvn-publish.gradle')
 apply from: rootProject.file('gradle/codecov.gradle')
