@@ -16,7 +16,7 @@ jobs:
         id: check-outdated-dependencies-and-create-issue
         uses: rudderlabs/github-action-updated-dependencies-notifier@main
         with:
-          outdated-dependency-names: "com.amplitude:android-sdk"
+          outdated-dependency-names: "com.amplitude:analytics-android"
           directory: "amplitude/build.gradle"
           title: "fix: update Amplitude SDK to the latest version"
           assignee: "desusai7"
