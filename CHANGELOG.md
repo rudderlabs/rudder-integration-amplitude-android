@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 1.1.1 (2025-07-30)
+
+
+### Bug Fixes
+
+* address snyk issue ([#15](https://github.com/rudderlabs/rudder-integration-amplitude-android/issues/15)) ([3f6bdde](https://github.com/rudderlabs/rudder-integration-amplitude-android/commit/3f6bdde6acd021c9a91556c8c4d05daebb37fb7e))
+
 ## 1.1.0 (2023-05-08)
 
 
