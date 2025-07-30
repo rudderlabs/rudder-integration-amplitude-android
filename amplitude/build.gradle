@@ -1,14 +1,17 @@
-
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
     namespace "com.rudderstack.android.integrations.amplitude"
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 33
+        targetSdkVersion 34
         buildConfigField("String", "VERSION_NAME", "\"${VERSION_NAME}\"")
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     buildTypes {
@@ -33,7 +36,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
     // GSON dependency
     implementation 'com.google.code.gson:gson:2.8.9'
-    implementation 'org.apache.commons:commons-lang3:3.5'
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
 
     testImplementation 'com.rudderstack.android.sdk:core:1.12.0'
     testImplementation 'org.robolectric:robolectric:4.3'
