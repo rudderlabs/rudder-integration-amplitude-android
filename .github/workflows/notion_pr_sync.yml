@@ -58,6 +58,7 @@ jobs:
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          permission-contents: read # to read repository contents
 
       - name: Sync Github PRs to Notion
         uses: sivashanmukh/github-notion-pr-sync@3967330238449a8550b06f6e1d6b83e1af569876 #v1.0.0

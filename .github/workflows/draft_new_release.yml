@@ -10,7 +10,6 @@ jobs:
   draft-new-release:
     permissions:
       contents: write  # for Git to git push
-      pull-requests: write  # for PR creation
     name: Draft a new release
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/heads/feat/') || startsWith(github.ref, 'refs/heads/fix/')
@@ -26,6 +25,8 @@ jobs:
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          permission-contents: write # to create commits and push branches
+          permission-pull-requests: write # to create release PRs
 
       - name: Checkout source branch
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
