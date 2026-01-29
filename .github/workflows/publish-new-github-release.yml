@@ -54,21 +54,19 @@ jobs:
         with:
           node-version: 16
 
-      # In order to make a commit, we need to initialize a user.
-      # You may choose to write something less generic here if you want, it doesn't matter functionality wise.
-      - name: Initialize mandatory git config
-        run: |
-          git config user.name "GitHub actions"
-          git config user.email noreply@github.com
+      - name: Create tag via API
+        uses: ryancyq/github-signed-commit@e9f3b28c80da7be66d24b8f501a5abe82a6b855f # v1.2.0
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        with:
+          tag: v${{ steps.extract-version.outputs.release_version }}
 
-      - name: Create Github Release & Tag
+      - name: Create Github Release
         id: create_release
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
           CONVENTIONAL_GITHUB_RELEASER_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
-          git tag -a v${{ steps.extract-version.outputs.release_version }} -m "chore: release v${{ steps.extract-version.outputs.release_version }}"
-          git push origin refs/tags/v${{ steps.extract-version.outputs.release_version }}
           DEBUG=conventional-github-releaser npx conventional-github-releaser -p angular
 
       - name: Delete release branch
