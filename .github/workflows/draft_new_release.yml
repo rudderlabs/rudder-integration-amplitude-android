@@ -37,18 +37,16 @@ jobs:
           node-version: 16
 
       # Calculate the next release version based on conventional semantic release
-      - name: Create release branch
+      - name: Calculate release version
         id: create-release
-        env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
           source_branch_name=${GITHUB_REF##*/}
           release_type=release
-          
+
           git fetch origin master --depth=1
           git merge origin/master
           current_version=$(cat gradle.properties | grep "VERSION_NAME" | cut -d'=' -f2)
-          
+
           npm ci
           npx standard-version --skip.commit --skip.tag --skip.changelog
           new_version=$(cat gradle.properties | grep "VERSION_NAME" | cut -d'=' -f2)
@@ -61,12 +59,20 @@ jobs:
           echo "Release type is $release_type"
           echo "New version is $new_version"
           echo "New release branch name is $branch_name"
-          git checkout -b "$branch_name"
-          git push --set-upstream origin "$branch_name"
-          
+
           echo "source_branch_name=$source_branch_name" >> $GITHUB_OUTPUT
           echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
+
+      - name: Create release branch via GitHub API
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          BASE_SHA=$(git rev-parse origin/master)
+          gh api repos/${{ github.repository }}/git/refs \
+            --method POST \
+            -f ref="refs/heads/${{ steps.create-release.outputs.branch_name }}" \
+            -f sha="$BASE_SHA"
 
       - name: Update changelog & bump version
         id: finish-release
@@ -79,6 +85,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         with:
+          branch-name: ${{ steps.create-release.outputs.branch_name }}
           files: |
             CHANGELOG.md
             gradle.properties
